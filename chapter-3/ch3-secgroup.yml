@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Template to create misconfigured Security Group in a VPC
+Parameters:
+  VPCId:
+    Type: String
+
+Resources:
+  MisconfiguredSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Misconfigured SEcurity group which should NEVER be launched
+      GroupName: MisconfiguredSecGroup
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref VPCId
+      
