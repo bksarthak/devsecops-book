@@ -4,8 +4,8 @@ phases:
   install:
     commands:
       - echo Entering the install phase...
-      - brew install ruby brew-gem
-      - brew gem install cfn-nag
+      - gem install cfn-nag
   build:
     commands:
       - echo Entering the build phase...
+      - cfn_nag_scan --input-path $CODEBUILD_SRC_DIR
