@@ -1,0 +1,11 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Entering the install phase...
+      - brew install ruby brew-gem
+      - brew gem install cfn-nag
+  build:
+    commands:
+      - echo Entering the build phase...
