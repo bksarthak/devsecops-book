@@ -1,0 +1,284 @@
+##############################################################################
+#  Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.   #
+#                                                                            #
+#  Licensed under the Amazon Software License (the "License"). You may not   #
+#  use this file except in compliance with the License. A copy of the        #
+#  License is located at                                                     #
+#                                                                            #
+#      http://aws.amazon.com/asl/                                            #
+#                                                                            #
+#  or in the "license" file accompanying this file. This file is distributed #
+#  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,        #
+#  express or implied. See the License for the specific language governing   #
+#  permissions and limitations under the License.                            #
+##############################################################################
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: "This template will deploys an EC2 instance and install/configures CloudWatch agent with logs and metrics.\n"
+
+#==================================================
+# Parameters
+#==================================================
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: m4.2xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  InstanceAMI:
+    Description: Managed AMI ID for EC2 Instance
+    Type : String
+    Default: ami-098e42ae54c764c35
+  SSHLocation:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 52.95.4.9/32
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+  SSMLogBucket:
+    Description: S3 Bucket
+    Type: String
+    Default: 578830841467-us-west-2-infra-12341234
+    ConstraintDescription: S3 Bucket
+  WaitForSuccessTimeoutSeconds:
+    Description: SSM Wait for Success Timeout
+    Type: Number
+    Default: 600
+    ConstraintDescription: SSM Wait for Success Timeout
+
+#==================================================
+# Resources
+#==================================================
+
+Resources:
+
+#==================================================
+# SSM Parameter with CloudWatch Agent Configuration
+#==================================================
+
+  CloudWatchConfigParemeter:
+    DependsOn: EC2Instance
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: AmazonCloudWatch-linux
+      Type: String
+      Value: !Sub |
+        {
+          "agent": {
+            "metrics_collection_interval": 60,
+            "run_as_user": "cwagent"
+          },
+          "logs": {
+            "logs_collected": {
+              "files": {
+                "collect_list": [
+                  {
+                      "file_path": "/var/log/nginx/error.log",
+                      "log_group_name": "DemoApp/error.log",
+                      "log_stream_name": "{EC2Instance}"
+                  },
+                  {
+                      "file_path": "/var/log/nginx/access.log",
+                      "log_group_name": "DemoApp/access.log",
+                      "log_stream_name": "{EC2Instance}"
+                  }
+                ]
+              }
+            }
+          },
+          "metrics": {
+            "append_dimensions": {
+              "ImageId": "${!aws:ImageId}",
+              "InstanceId": "${!aws:InstanceId}",
+              "InstanceType": "${!aws:InstanceType}"
+            },
+            "metrics_collected": {
+              "disk": {
+                "measurement": [
+                  "used_percent"
+                ],
+                "metrics_collection_interval": 60,
+                "resources": [
+                  "*"
+                ]
+              },
+              "mem": {
+                "measurement": [
+                  "mem_used_percent"
+                ],
+                "metrics_collection_interval": 60
+              },
+              "statd": {
+                "metrics_aggregation_interval": 60
+                "metrics_collection_interval": 10
+                "service_address": ":8125"
+              }
+            }
+          }
+        }
+
+#==================================================
+# EC2 Role
+#==================================================
+
+  EC2CloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+      Policies:
+        - PolicyName: AllowAccessToYumRepositoryInS3AndUseCloudWatchAgentPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub "arn:aws:s3:::amazonlinux.${AWS::Region}.amazonaws.com/*"
+                  - !Sub "arn:aws:s3:::amazonlinux-2-repos-${AWS::Region}/*"
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+        - PolicyName: DeliverLogPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${SSMLogBucket}"
+                  - !Sub "arn:aws:s3:::${SSMLogBucket}/*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+
+#==================================================
+# EC2 Profile
+#==================================================
+
+  EC2CloudWatchProfile:
+    DependsOn: EC2CloudWatchRole
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Roles:
+      - Ref: EC2CloudWatchRole
+
+#==================================================
+# EC2 Security group
+#==================================================
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp:
+          Ref: SSHLocation
+
+#==================================================
+# EC2 Instance
+#==================================================
+
+  EC2Instance:
+    DependsOn:
+      - EC2CloudWatchProfile
+      - InstanceSecurityGroup
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType:
+        Ref: InstanceType
+      IamInstanceProfile:
+        Ref: EC2CloudWatchProfile
+      KeyName:
+        Ref: KeyName
+      ImageId:
+        Ref: InstanceAMI
+      SecurityGroups:
+        - Ref: InstanceSecurityGroup
+
+#==================================================
+# SSM Configuration Document
+#==================================================
+
+  AWSConfigureAWSPackageAssociation:
+    DependsOn: EC2Instance
+    Type: AWS::SSM::Association
+    Properties:
+      AssociationName: !Sub "${EC2Instance}-aws-configure-aws-package-association"
+      Name: AWS-ConfigureAWSPackage
+      OutputLocation:
+        S3Location:
+          OutputS3BucketName: !Ref SSMLogBucket
+          OutputS3KeyPrefix: !Sub "${EC2Instance}/aws-configure-aws-package-association"
+      Parameters:
+        action:
+          - Install
+        installationType:
+          - Uninstall and reinstall
+        name:
+          - AmazonCloudWatchAgent
+        version:
+          - latest
+      Targets:
+        - Key: InstanceIds
+          Values:
+            - !Ref EC2Instance
+      WaitForSuccessTimeoutSeconds: !Ref WaitForSuccessTimeoutSeconds
+
+  #==================================================
+  # SSM Configureation Document (Manage Agent)
+  #==================================================
+
+  AmazonCloudWatchManageAgentAssociation:
+    Type: AWS::SSM::Association
+    DependsOn: AWSConfigureAWSPackageAssociation
+    Properties:
+      AssociationName: !Sub "${EC2Instance}-amazon-cloudwatch-manage-agent"
+      Name: AmazonCloudWatch-ManageAgent
+      OutputLocation:
+        S3Location:
+          OutputS3BucketName: !Ref SSMLogBucket
+          OutputS3KeyPrefix: !Sub "${EC2Instance}/amazon-cloudwatch-manage-agent"
+      Parameters:
+        action:
+          - configure
+        mode:
+          - ec2
+        optionalConfigurationSource:
+          - ssm
+        optionalConfigurationLocation:
+          - AmazonCloudWatch-linux
+        optionalOpenTelemetryCollectorConfigurationSource:
+          - ssm
+        optionalRestart:
+          - "yes"
+      Targets:
+        - Key: InstanceIds
+          Values:
+            - !Ref EC2Instance
+      WaitForSuccessTimeoutSeconds: !Ref WaitForSuccessTimeoutSeconds
