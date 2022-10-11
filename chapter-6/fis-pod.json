@@ -1,0 +1,32 @@
+{
+	"description": "Litmus CPU Hog",
+	"targets": {
+		"MyCluster": {
+			"resourceType": "aws:eks:cluster",
+			"resourceArns": [
+				"arn:aws:eks:arn:aws::111122223333:cluster/cluster-id"
+			],
+			"selectionMode": "ALL"
+		}
+	},
+	"actions": {
+		"MyAction": {
+			"actionId": "aws:eks:inject-kubernetes-custom-resource",
+			"parameters": {
+				"maxDuration": "PT2M",
+				"kubernetesApiVersion": "litmuschaos.io/v1alpha1",
+				"kubernetesKind": "ChaosEngine",
+				"kubernetesNamespace": "litmus",
+				"kubernetesSpec": "{\"engineState\":\"active\",\"appinfo\":{\"appns\":\"default\",\"applabel\":\"run=nginx\",\"appkind\":\"deployment\"},\"chaosServiceAccount\":\"litmus-admin\",\"experiments\":[{\"name\":\"pod-cpu-hog\",\"spec\":{\"components\":{\"env\":[{\"name\":\"TOTAL_CHAOS_DURATION\",\"value\":\"60\"},{\"name\":\"CPU_CORES\",\"value\":\"1\"},{\"name\":\"PODS_AFFECTED_PERC\",\"value\":\"100\"},{\"name\":\"CONTAINER_RUNTIME\",\"value\":\"docker\"},{\"name\":\"SOCKET_PATH\",\"value\":\"/var/run/docker.sock\"}]},\"probe\":[]}}],\"annotationCheck\":\"false\"}"
+			},
+			"targets": {
+				"Cluster": "MyCluster"
+			}
+		}
+	},
+	"stopConditions": [{
+		"source": "none"
+	}],
+	"roleArn": "arn:aws:iam::111122223333:role/role-name",
+	"tags": {}
+}

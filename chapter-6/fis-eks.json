@@ -1,0 +1,32 @@
+{
+	"description": "EKS ChaosMesh StressChaos example",
+	"targets": {
+		"EKS-Cluster-Target-1": {
+			"resourceType": "aws:eks:cluster",
+			"resourceArns": [
+				"arn:aws:eks:arn:aws::111122223333:cluster/cluster-id"
+			],
+			"selectionMode": "ALL"
+		}
+	},
+	"actions": {
+		"TestCPUStress": {
+			"actionId": "aws:eks:inject-kubernetes-custom-resource",
+			"parameters": {
+				"maxDuration": "PT2M",
+				"kubernetesApiVersion": "chaos-mesh.org/v1alpha1",
+				"kubernetesKind": "StressChaos",
+				"kubernetesNamespace": "default",
+				"kubernetesSpec": "{\"selector\":{\"namespaces\":[\"default\"],\"labelSelectors\":{\"run\":\"nginx\"}},\"mode\":\"all\",\"stressors\": {\"cpu\":{\"workers\":1,\"load\":50}},\"duration\":\"5m\"}"
+			},
+			"targets": {
+				"Cluster": "EKS-Cluster-Target-1"
+			}
+		}
+	},
+	"stopConditions": [{
+		"source": "none"
+	}],
+	"roleArn": "arn:aws:iam::111122223333:role/role-name",
+	"tags": {}
+}

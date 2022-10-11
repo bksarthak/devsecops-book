@@ -1,18 +1,3 @@
-##############################################################################
-#  Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.   #
-#                                                                            #
-#  Licensed under the Amazon Software License (the "License"). You may not   #
-#  use this file except in compliance with the License. A copy of the        #
-#  License is located at                                                     #
-#                                                                            #
-#      http://aws.amazon.com/asl/                                            #
-#                                                                            #
-#  or in the "license" file accompanying this file. This file is distributed #
-#  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,        #
-#  express or implied. See the License for the specific language governing   #
-#  permissions and limitations under the License.                            #
-##############################################################################
-
 AWSTemplateFormatVersion: 2010-09-09
 
 Description: "This template will deploys an EC2 instance and install/configures CloudWatch agent with logs and metrics.\n"
@@ -40,13 +25,11 @@ Parameters:
     Type: String
     MinLength: '9'
     MaxLength: '18'
-    Default: 52.95.4.9/32
     AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
   SSMLogBucket:
     Description: S3 Bucket
     Type: String
-    Default: 578830841467-us-west-2-infra-12341234
     ConstraintDescription: S3 Bucket
   WaitForSuccessTimeoutSeconds:
     Description: SSM Wait for Success Timeout
