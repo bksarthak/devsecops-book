@@ -1,0 +1,24 @@
+{
+    "description": "Detach an EBS Volume",
+    "stopConditions": [
+        {
+            "source": "none"
+        }
+    ],
+    "targets": {
+    },
+    "actions": {
+        "terminateInstances": {
+            "actionId": "aws:ssm:start-automation-execution",
+            "description": "Detach an EBS Volume",
+            "parameters": {
+                "documentArn": "arn:aws:ssm:us-east-1::document/AWS-DetachEBSVolume",
+                "documentParameters": "{\"VolumeId\": \"EBS_VOLUME_ID\", \"AutomationAssumeRole\": \"SSM_ROLE_ARN\"}",
+                "maxDuration": "PT5M"
+            },
+            "targets": {
+            }
+        }
+    },
+    "roleArn": "SSM_ROLE_ARN"
+}

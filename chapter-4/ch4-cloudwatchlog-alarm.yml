@@ -1,0 +1,186 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: "AWS CloudWatch Template.  This template will deploy CloudWatch LogGroup. CloudWatch Metric Filter and CloudWatch Anomaly Detector.\n"
+
+#==========================================================
+# MetaData to Organize the Parameters CloudWatch
+#==========================================================
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: CloudWatch Log Group Requirements
+        Parameters:
+          - LogGroupName
+          - LogGroupRetention
+      - Label:
+          default: CloudWatch Log Metric Filter Requirements
+        Parameters:
+          - LogFilterMetricValue
+          - LogFilterMetricNamespace
+          - LogFilterMetricName
+          - LogFilterPattern
+      - Label:
+          default: CloudWatch Alarm Requirements
+        Parameters:
+          - LogAlrPeriod
+          - LogAlrThreshold
+          - SNSTopicForCWAlarms
+      - Label:
+          default: CloudWatch Anomaly Detector Requirements
+        Parameters:
+          - AnomalyStat
+          - AnomalyDimName
+          - AnomalyDimValue
+          - AnomalyNameSpace
+          - AnomalyMetricName
+          - AnomalyConfigZone
+          - AnomalyConfigExcludeEnd
+          - AnomalyConfigExcludeStart
+
+#==================================================
+# Parameters
+#==================================================
+
+Parameters:
+  LogFilterPattern:
+    Type: String
+    Description: 'cloudwatch log metric filter'
+    Default: "[ip, identity, user_id, timestamp, request, status_code = 4*, size]"
+  LogFilterMetricValue:
+    Type: String
+    Description: 'cloudwatch log metric filter value'
+    Default: "1"
+  LogFilterMetricNamespace:
+    Type: String
+    Description: 'cloudwatch log metric filter name space'
+    Default: "WebServer/400s"
+  LogFilterMetricName:
+    Type: String
+    Description: 'cloudwatch log metric filter name'
+    Default: "4xxCount"
+  SNSTopicForCWAlarms:
+    Type: String
+    Description: Provide SNS Topic ARN for standard CloudWatch alarms.
+  LogAlrPeriod:
+    Type: Number
+    Default: '600'
+    Description: The time over which the specified statistic is applied. Specify time in seconds, in multiples of 60.
+  LogAlrThreshold:
+    Type: Number
+    Default: '90'
+    Description: The count threshold
+  AnomalyMetricName:
+    Type: String
+    Description: 'cloudwatch anomaly metric name'
+    Default: "JvmMetric"
+  AnomalyNameSpace:
+    Type: String
+    Description: 'cloudwatch anomaly name space'
+    Default: "AWSSDK/Java"
+  AnomalyStat:
+    Type: String
+    Description: 'cloudwatch anomaly stat'
+    Default: "Average"
+  AnomalyDimName:
+    Type: String
+    Description: 'cloudwatch anomaly dimension name'
+    Default: "Memory"
+  AnomalyDimValue:
+    Type: String
+    Description: 'cloudwatch anomaly dimension value'
+    Default: "UsedMemory"
+  AnomalyConfigZone:
+    Type: String
+    Description: 'cloudwatch anomaly time zone'
+    Default: "UTC"
+  AnomalyConfigExcludeStart:
+    Type: String
+    Description: 'cloudwatch anomaly exclude start time'
+  AnomalyConfigExcludeEnd:
+    Type: String
+    Description: 'cloudwatch anomaly exclude end time'
+  LogGroupName:
+    Type: String
+    Description: 'cloudwatch log group name'
+    Default: "cw-log-group"
+  LogGroupRetention:
+    Type: Number
+    Description: Retention period for log groups in cloudwatch
+    AllowedValues:
+      - 1
+      - 3
+      - 5
+      - 7
+      - 14
+      - 30
+      - 60
+      - 90
+      - 120
+      - 150
+      - 180
+      - 365
+      - 400
+      - 545
+      - 731
+      - 1827
+      - 2192
+      - 2557
+      - 2922
+      - 3288
+      - 3653
+    Default: 30
+
+
+#==================================================
+# Resources
+#==================================================
+
+Resources:
+  CWLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Ref LogGroupName
+      RetentionInDays: !Ref LogGroupRetention
+
+  CWLogMetricFilter:
+   DependsOn: CWLogGroup
+   Type: AWS::Logs::MetricFilter
+   Properties:
+     FilterPattern: !Ref LogFilterPattern
+     LogGroupName: !Ref CWLogGroup
+     MetricTransformations:
+      -
+        MetricValue: !Ref LogFilterMetricValue
+        MetricNamespace: !Ref LogFilterMetricName
+        MetricName: !Ref LogFilterMetricName
+
+  LogFileMetricAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "4xxCount-Alarm"
+      AlarmDescription: '4xxCount Alarm'
+      AlarmActions:
+        - !Ref SNSTopicForCWAlarms
+      MetricName: !Ref LogFilterMetricName
+      Namespace: !Ref LogFilterMetricNamespace
+      Statistic: 'Maximum'
+      Period: !Ref LogAlrPeriod
+      EvaluationPeriods: 1
+      Threshold: !Ref LogAlrThreshold
+      ComparisonOperator: 'GreaterThanThreshold'
+
+  CWAnomalyDetectorOnUsedMemory:
+    Type: 'AWS::CloudWatch::AnomalyDetector'
+    Properties:
+      MetricName: !Ref AnomalyMetricName
+      Namespace: !Ref AnomalyNameSpace
+      Stat: !Ref AnomalyStat
+      Dimensions:
+        - Name: !Ref AnomalyDimName
+          Value: !Ref AnomalyDimValue
+      Configuration:
+        MetricTimeZone: !Ref AnomalyConfigZone
+        ExcludedTimeRanges:
+          - StartTime: !Ref AnomalyConfigExcludeStart
+            EndTime: !Ref AnomalyConfigExcludeEnd

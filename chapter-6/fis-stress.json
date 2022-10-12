@@ -1,0 +1,34 @@
+{
+    "tags": {
+        "Name": "EC2CPUStress"
+    },
+    "description": "Run a CPU fault injection on a specify EC2 instance",
+    "targets": {
+        "myInstance": {
+            "resourceType": "aws:ec2:instance",
+            "resourceArns": ["arn:aws:ec2:us-east-1:111122223333:instance/instance-id"],
+            "selectionMode": "ALL"
+        }
+    },
+    "actions": {
+        "CPUStress": {
+            "actionId": "aws:ssm:send-command",
+            "description": "run cpu stress on EC2 using ssm",
+            "parameters": {
+                "duration": "PT5M",
+                "documentArn": "arn:aws:ssm:us-east-1::document/AWSFIS-Run-CPU-Stress",
+                "documentParameters": "{\"DurationSeconds\": \"120\", \"InstallDependencies\": \"True\", \"CPU\": \"0\"}"
+            },
+            "targets": {
+                "Instances": "myInstance"
+            }
+        }
+    },
+    "stopConditions": [
+        {
+            "source": "aws:cloudwatch:alarm",
+            "value": "arn:aws:cloudwatch:us-east-1:111122223333:alarm:alarm-name"
+        }
+    ],
+    "roleArn": "arn:aws:iam::111122223333:role/role-name"
+}

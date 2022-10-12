@@ -1,0 +1,35 @@
+{
+    "tags": {
+        "Name": "IAMThrottleEC2APIActions"
+    },
+    "description": "Throttle the specified EC2 API actions using a specified IAM role",
+    "targets": {
+        "myRole": {
+            "resourceType": "aws:iam:role",
+            "resourceArns": ["arn:aws:iam::111122223333:role/role-name"],
+            "selectionMode": "ALL"
+        }
+    },
+    "actions": {
+        "ThrottleAPI": {
+            "actionId": "aws:fis:inject-api-throttle-error",
+            "description": "Throttle APIs for 10 minutes using a specific IAM role",
+            "parameters": {
+                "service": "ec2",
+                "operations": "DescribeInstances,DescribeNetworkInterfaces,DescribeVolumes",
+                "percentage": "100",
+                "duration": "PT2M"
+            },
+            "targets": {
+                "Roles": "myRole"
+            }
+        }
+    },
+    "stopConditions": [
+        {
+            "source": "aws:cloudwatch:alarm",
+            "value": "arn:aws:cloudwatch:us-east-1:111122223333:alarm:alarm-name"
+        }
+    ],
+    "roleArn": "arn:aws:iam::111122223333:role/role-name"
+}

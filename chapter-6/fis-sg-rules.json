@@ -1,0 +1,24 @@
+{
+    "description": "Remove ingress and egress traffic rules for a given security group ",
+    "stopConditions": [
+        {
+            "source": "none"
+        }
+    ],
+    "targets": {
+    },
+    "actions": {
+        "terminateInstances": {
+            "actionId": "aws:ssm:start-automation-execution",
+            "description": "Remove ingress and egress traffic rules for a given AWS security group",
+            "parameters": {
+                "documentArn": "arn:aws:ssm:us-east-1::document/AWS-CloseSecurityGroup",
+                "documentParameters": "{\"SecurityGroupId\": \"SECURITY_GROUP_ID\", \"AutomationAssumeRole\": \"SSM_ROLE_ARN\"}",
+                "maxDuration": "PT5M"
+            },
+            "targets": {
+            }
+        }
+    },
+    "roleArn": "SSM_ROLE_ARN"
+}

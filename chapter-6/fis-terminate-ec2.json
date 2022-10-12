@@ -1,0 +1,24 @@
+{
+    "description": "Terminate an EC2 Instance",
+    "stopConditions": [
+        {
+            "source": "none"
+        }
+    ],
+    "targets": {
+    },
+    "actions": {
+        "terminateInstances": {
+            "actionId": "aws:ssm:start-automation-execution",
+            "description": "Terminate an EC2 Instances",
+            "parameters": {
+                "documentArn": "arn:aws:ssm:us-east-1::document/AWS-TerminateEC2Instance",
+                "documentParameters": "{\"InstanceId\": \"EC2_INSTANCE_ID\", \"AutomationAssumeRole\": \"SSM_ROLE_ARN\"}",
+                "maxDuration": "PT5M"
+            },
+            "targets": {
+            }
+        }
+    },
+    "roleArn": "SSM_ROLE_ARN"
+}
