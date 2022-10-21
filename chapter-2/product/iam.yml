@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This template will create the IAM roles for the POC'
+
+Parameters:
+  EksName:
+    Type: String
+    Description: 'Enter the EKS name'
+
+Resources:
+## Creates servicerole policy for EFS
+  EksEfsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: policy for EKS servicerole for EFS
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - iam:CreateServiceLinkedRole
+              - iam:AttachRolePolicy
+              - iam:PutRolePolicy
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - iam:CreateServiceLinkedRole
+            Resource: '*'
+            Condition:
+              StringLike:
+                'iam:AWSServiceName': elasticfilesystem.amazonaws.com
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+              - elasticfilesystem:ClientMount
+              - elasticfilesystem:ClientWrite
+              - elasticfilesystem:ClientRootAccess
+            Resource: '*'
+## Creates autoscaling policy
+  EksAutoscalingPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: autoscaling policy for EKS nodegroup role
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - autoscaling:DescribeAutoScalingGroups
+              - autoscaling:DescribeAutoScalingInstances
+              - autoscaling:DescribeLaunchConfigurations
+              - autoscaling:DescribeTags
+              - autoscaling:SetDesiredCapacity
+              - autoscaling:TerminateInstanceInAutoScalingGroup
+              - ec2:DescribeLaunchTemplateVersions
+            Resource: '*'
+## Creates IAM role for EKS cluster
+  EksClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - eks.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+      Tags:
+        - Key: Name
+          Value: 'EksClusterRole'
+## Creates IAM role for EKS nodegroup
+  EksNodegroupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - !Ref EksAutoscalingPolicy
+        - !Ref EksEfsPolicy
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Tags:
+        - Key: Name
+          Value: 'EksNodegroupRole'
+
+## Creates SSM Parameters to store the IAM roles
+  EksClusterRoleParameterStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-EksClusterRole'
+      Value: !GetAtt EksClusterRole.Arn
+      Description: 'Contains EKS cluster IAM role'
+  EksNodegroupRoleParameterStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-EksNodegroupRole'
+      Value: !GetAtt EksNodegroupRole.Arn
+      Description: 'Contains EKS nodegroup IAM role'

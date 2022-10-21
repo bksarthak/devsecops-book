@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This template will create the EKS cluster the POC'
+
+Parameters:
+  EksName:
+    Type: String
+    Description: 'Enter the EKS name'
+  EksVersion:
+    Type: String
+    Default: 1.23
+    Description: 'Enter the EKS cluster version'
+
+Resources:
+## Creates EKS cluster control plane
+  EksCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref EksName
+      ResourcesVpcConfig:
+        SubnetIds:
+          - 'Fn::Join':
+              - ''
+              - - '{{resolve:ssm:'
+                - !Ref EksName
+                - "-"
+                - "PrivateSubnetA:1}}"
+          - 'Fn::Join':
+              - ''
+              - - '{{resolve:ssm:'
+                - !Ref EksName
+                - "-"
+                - "PrivateSubnetB:1}}"
+      RoleArn:
+        'Fn::Join':
+          - ''
+          - - '{{resolve:ssm:'
+            - !Ref EksName
+            - "-"
+            - "EksClusterRole:1}}"
+      Version: !Ref EksVersion
+
+  EksSgIngress1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !GetAtt EksCluster.ClusterSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: 0.0.0.0/0 ## make parameter
+
+## Creates EKS cluster SSM Parameter Store
+  EksParameterStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-EksCluster'
+      Value: !Ref EksCluster
+      Description: 'EKS Cluster Name'
+## Creates EKS cluster Security Group Id
+  EksSgGrpIdStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-SecurityGroupId'
+      Value: !GetAtt EksCluster.ClusterSecurityGroupId
+      Description: 'EKS Cluster Security Group'

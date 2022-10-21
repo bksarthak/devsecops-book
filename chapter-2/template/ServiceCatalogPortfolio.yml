@@ -1,0 +1,561 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This sample template creates a Service Catalog portfoliow ith a user-specified Principal.
+  It also creates a Service Catalog product and an associated launch constraint for an EKS product.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Service Catalog Portfolio configuration
+        Parameters:
+          - Environment
+          - Description
+          - ProviderName
+          - AcceptLanguage
+      - Label:
+          default: Service Catalog Product configuration
+        Parameters:
+          - ProductDescription
+          - ProductDistributor
+          - ProductOwner
+          - ProductSupportDescription
+          - ProductSupportEmail
+          - ProductSupportUrl
+      - Label:
+          default: Product Artifact configuration
+        Parameters:
+          - ArtifactName
+          - ArtifactDescription
+          - ArtifactLoadTemplateFromUrl
+    ParameterLabels:
+      AcceptLanguage:
+        default: Which language code you wish to use?
+      Description:
+        default: Which description do you wish to set?
+      Environment:
+        default: Which environment is this portfolio being setup?
+      ProviderName:
+        default: Which provider name do you wish to set?
+      ArtifactDescription:
+        default: What is the artifact description?
+      ArtifactLoadTemplateFromUrl:
+        default: What is the URL from which to load the CloudFormation template?
+      ArtifactName:
+        default: What is the name of the artifact?
+      ProductDescription:
+        default: Product description
+      ProductDistributor:
+        default: Product distributor
+      ProductOwner:
+        default: Product Owner
+      ProductSupportDescription:
+        default: Product support description
+      ProductSupportEmail:
+        default: Product support email
+      ProductSupportUrl:
+        default: Product support URL
+Parameters:
+  AcceptLanguage:
+    AllowedValues:
+      - en
+      - jp
+      - zh
+    ConstraintDescription: please specify a valid value.
+    Default: en
+    Description: 'Please specify a language code.  Choose from: en - English (default),
+      jp - Japanese, zh - Chinese.'
+    Type: String
+  Description:
+    ConstraintDescription: please specify a valid value.
+    Default: Example portfolio.
+    Description: 'Please specify a description for your portfolio.  Maximum length:
+      2000 characters.'
+    MaxLength: '2000'
+    MinLength: '1'
+    Type: String
+  Environment:
+    AllowedValues:
+      - DEV
+      - QA
+      - PROD
+    ConstraintDescription: please specify a valid value.
+    Type: String
+    Default: DEV
+  ProviderName:
+    ConstraintDescription: please specify a valid value.
+    Default: Example provider
+    Description: 'Please specify a provider name for your portfolio.  Maximum length:
+      20 characters.'
+    MaxLength: '20'
+    MinLength: '1'
+    Type: String
+  ArtifactDescription:
+    ConstraintDescription: please specify a value.
+    Default: Initial artifact version
+    Description: Please specify the description for the artifact.
+    MinLength: '1'
+    Type: String
+  ArtifactLoadTemplateFromUrl:
+    ConstraintDescription: please specify a value.
+    Description: 'Please specify the URL for the CloudFormation template to use.  For
+      example: https://s3.amazonaws.com/<BUCKETNAME>/<CloudFormation Template Name>'
+    MinLength: '1'
+    Type: String
+    Default: https://s3.amazonaws.com/
+  ArtifactName:
+    AllowedPattern: ^[a-zA-Z0-9\._-]+$
+    ConstraintDescription: please specify a valid value.
+    Default: v1
+    Description: 'Please specify the name for the artifact, for example: v1, v1.1,
+      v2.  No spaces are allowed.'
+    MinLength: '1'
+    Type: String
+  ProductDescription:
+    ConstraintDescription: please specify a value.
+    Default: Example product
+    Description: Please specify the description for the product.
+    MinLength: '1'
+    Type: String
+  ProductDistributor:
+    ConstraintDescription: please specify a value.
+    Default: Example distributor
+    Description: Please specify the distributor for the product.
+    MinLength: '1'
+    Type: String
+  ProductOwner:
+    ConstraintDescription: please specify a value.
+    Default: Example owner
+    Description: Please specify the owner for the product.
+    MinLength: '1'
+    Type: String
+  ProductSupportDescription:
+    ConstraintDescription: please specify a value.
+    Default: Example product description
+    Description: Please specify the support description for the product.
+    MinLength: '1'
+    Type: String
+  ProductSupportEmail:
+    ConstraintDescription: please specify a value.
+    Default: example@example.com
+    Description: Please specify the support email for the product.
+    MinLength: '1'
+    Type: String
+  ProductSupportUrl:
+    ConstraintDescription: please specify a value.
+    Default: https://www.example.com
+    Description: Please specify the support URL for the product.
+    MinLength: '1'
+    Type: String
+Resources:
+  SCPortfolioRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSServiceCatalogEndUserFullAccess
+      RoleName:
+        'Fn::Join':
+           - ''
+           - -  Ref: Environment
+             -  '-sc-enduser-'
+             -  Ref: 'AWS::Region'
+             - '-role'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+               'Fn::Join':
+                - ''
+                - - 'arn:aws:iam::'
+                  -  Ref: 'AWS::AccountId'
+                  -  ':root'
+            Action:
+              - 'sts:AssumeRole'
+      Description: "The product role used to launch the Example Product."
+  EKSProductRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        'Fn::Join':
+           - ''
+           - -  Ref: Environment
+             -  '-eks-portfolio-'
+             -  Ref: 'AWS::Region'
+             - '-role'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - servicecatalog.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: "The product role used to launch the Example Product."
+  EKSProductPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName:
+        'Fn::Join':
+           - ''
+           - -  Ref: Environment
+             -  '-eks-portfolio-'
+             -  Ref: 'AWS::Region'
+             - '-role-policy'
+      Roles:
+        - !Ref EKSProductRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+            - cloudformation:CreateStack
+            - cloudformation:DeleteStack
+            - cloudformation:DescribeStackEvents
+            - cloudformation:DescribeStacks
+            - cloudformation:SetStackPolicy
+            - cloudformation:ValidateTemplate
+            - cloudformation:UpdateStack
+            - cloudformation:CreateChangeSet
+            - cloudformation:DescribeChangeSet
+            - cloudformation:ExecuteChangeSet
+            - cloudformation:ListChangeSets
+            - cloudformation:DeleteChangeSet
+            - cloudformation:TagResource
+            - cloudformation:CreateStackSet
+            - cloudformation:CreateStackInstances
+            - cloudformation:UpdateStackSet
+            - cloudformation:UpdateStackInstances
+            - cloudformation:DeleteStackSet
+            - cloudformation:DeleteStackInstances
+            - cloudformation:DescribeStackSet
+            - cloudformation:DescribeStackInstance
+            - cloudformation:DescribeStackSetOperation
+            - cloudformation:ListStackInstances
+            - cloudformation:ListStackResources
+            - cloudformation:ListStackSetOperations
+            - cloudformation:ListStackSetOperationResults
+            Resource:
+            - "arn:aws:cloudformation:*:*:stack/SC-*"
+            - "arn:aws:cloudformation:*:*:stack/StackSet-SC-*"
+            - "arn:aws:cloudformation:*:*:changeSet/SC-*"
+            - "arn:aws:cloudformation:*:*:stackset/SC-*"
+          -
+            Effect: Allow
+            Action:
+            - cloudformation:GetTemplateSummary
+            - ssm:DescribeDocument
+            - ssm:GetAutomationExecution
+            - config:DescribeConfigurationRecorders
+            - config:DescribeConfigurationRecorderStatus
+            - ec2:AllocateAddress
+            - ec2:AssignPrivateIpAddresses
+            - ec2:AssociateAddress
+            - ec2:AssociateRouteTable
+            - ec2:AttachInternetGateway
+            - ec2:AttachNetworkInterface
+            - ec2:AttachVolume
+            - ec2:CreateInternetGateway
+            - ec2:CreateNatGateway
+            - ec2:CreateNetworkAcl
+            - ec2:CreateNetworkAclEntry
+            - ec2:CreateNetworkInterface
+            - ec2:CreateRoute
+            - ec2:CreateRouteTable
+            - ec2:CreateSnapshot
+            - ec2:CreateSubnet
+            - ec2:CreateTags
+            - ec2:CreateVolume
+            - ec2:CreateVpc
+            - ec2:DeleteInternetGateway
+            - ec2:DeleteNatGateway
+            - ec2:DeleteNetworkAcl
+            - ec2:DeleteNetworkAclEntry
+            - ec2:DeleteNetworkInterface
+            - ec2:DeleteRoute
+            - ec2:DeleteRouteTable
+            - ec2:DeleteSnapshot
+            - ec2:DeleteSubnet
+            - ec2:DeleteTags
+            - ec2:DeleteVolume
+            - ec2:DeleteVpc
+            - ec2:DescribeAccountAttributes
+            - ec2:DescribeAddresses
+            - ec2:DescribeAvailabilityZones
+            - ec2:DescribeNatGateways
+            - ec2:DescribeHosts
+            - ec2:DescribeImageAttribute
+            - ec2:DescribeImages
+            - ec2:DescribeInstanceAttribute
+            - ec2:DescribeInstances
+            - ec2:DescribeInstanceStatus
+            - ec2:DescribeInternetGateways
+            - ec2:DescribeMovingAddresses
+            - ec2:DescribeNetworkAcls
+            - ec2:DescribeNetworkInterfaceAttribute
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DescribePrefixLists
+            - ec2:DescribeRegions
+            - ec2:DescribeRouteTables
+            - ec2:DescribeSubnets
+            - ec2:DescribeTags
+            - ec2:DescribeVolumeAttribute
+            - ec2:DescribeVolumes
+            - ec2:DescribeVolumeStatus
+            - ec2:DescribeVpcAttribute
+            - ec2:DescribeVpcs
+            - ec2:DetachInternetGateway
+            - ec2:DetachNetworkInterface
+            - ec2:DetachVolume
+            - ec2:DisassociateAddress
+            - ec2:DisassociateRouteTable
+            - ec2:CreateSecurityGroup
+            - ec2:AuthorizeSecurityGroupEgress
+            - ec2:AuthorizeSecurityGroupIngress
+            - ec2:DeleteSecurityGroup
+            - ec2:RevokeSecurityGroupEgress
+            - ec2:RevokeSecurityGroupIngress
+            - ec2:DescribeSecurityGroups
+            - ec2:DescribeSecurityGroupReferences
+            - ec2:DescribeStaleSecurityGroups
+            - ec2:ModifyHosts
+            - ec2:ModifyInstanceAttribute
+            - ec2:ModifyNetworkInterfaceAttribute
+            - ec2:ModifySubnetAttribute
+            - ec2:ModifyVolumeAttribute
+            - ec2:ModifyVpcAttribute
+            - ec2:MonitorInstances
+            - ec2:MoveAddressToVpc
+            - ec2:RebootInstances
+            - ec2:ReleaseAddress
+            - ec2:ReportInstanceStatus
+            - ec2:RunInstances
+            - ec2:StartInstances
+            - ec2:StopInstances
+            - ec2:TerminateInstances
+            - ec2:UnassignPrivateIpAddresses
+            - ec2:UnmonitorInstances
+            - lambda:InvokeFunction
+            - lambda:CreateFunction
+            - lambda:ListFunctions
+            - lambda:GetFunction
+            - lambda:UpdateFunctionCode
+            - lambda:DeleteFunction
+            - lambda:GetAccountSettings
+            - lambda:GetFunctionConfiguration
+            - lambda:GetPolicy
+            - lambda:GetAlias
+            - lambda:ListVersionsByFunction
+            - lambda:ListAliases
+            - lambda:ListTags
+            - lambda:AddPermission
+            - lambda:RemovePermission
+            - events:DescribeRule
+            - events:DeleteRule
+            - events:CreateRule
+            - events:ListRules
+            - events:PutRule
+            - events:PutTargets
+            - events:RemoveTargets
+            - iam:PassRole
+            - iam:CreateRole
+            - iam:PutRolePolicy
+            - iam:AttachRolePolicy
+            - iam:DeleteRolePolicy
+            - iam:DetachRolePolicy
+            - iam:GetRole
+            - iam:GetRolePolicy
+            - iam:ListAttachedRolePolicies
+            - iam:ListRolePolicies
+            - iam:PutRolePolicy
+            - iam:UpdateRole
+            - iam:UpdateRoleDescription
+            - iam:DeleteRole
+            - iam:CreatePolicy
+            - iam:GetPolicy
+            - iam:DeletePolicy
+            - iam:ListPolicyVersions
+            - iam:ListPolicyTags
+            - iam:ListRoleTags
+            - iam:TagPolicy
+            - iam:TagRole
+            - iam:UnTagPolicy
+            - iam:UnTagRole
+            - ssm:PutParameter
+            - ssm:DeleteParameter
+            - ssm:DescribeParameters
+            - ssm:AddTags*
+            - ssm:GetParameters
+            - s3:CreateBucket
+            - s3:*Object
+            - s3:PutBucket*
+            - s3:ListBucket
+            - s3:DeleteObjectVersion
+            - servicecatalog:DescribeProduct
+            - servicecatalog:DescribeProductView
+            - servicecatalog:DescribeProvisioningParameters
+            - servicecatalog:ListLaunchPaths
+            - servicecatalog:ProvisionProduct
+            - servicecatalog:SearchProducts
+            - servicecatalog:DescribeProvisionedProduct
+            - servicecatalog:DescribeRecord
+            - servicecatalog:ListRecordHistory
+            - servicecatalog:ListStackInstancesForProvisionedProduct
+            - servicecatalog:ScanProvisionedProducts
+            - servicecatalog:TerminateProvisionedProduct
+            - servicecatalog:UpdateProvisionedProduct
+            - servicecatalog:SearchProvisionedProducts
+            - servicecatalog:CreateProvisionedProductPlan
+            - servicecatalog:DescribeProvisionedProductPlan
+            - servicecatalog:ExecuteProvisionedProductPlan
+            - servicecatalog:DeleteProvisionedProductPlan
+            - servicecatalog:ListProvisionedProductPlans
+            - servicecatalog:ListServiceActionsForProvisioningArtifact
+            - servicecatalog:ExecuteProvisionedProductServiceAction
+            - servicecatalog:DescribeServiceActionExecutionParameters
+            - eks:*
+            Resource: "*"
+  Portfolio:
+    DependsOn:
+      - SCPortfolioRole
+      - EKSProductRole
+      - EKSProductPolicy
+    Type: AWS::ServiceCatalog::Portfolio
+    Properties:
+      AcceptLanguage: !Ref 'AcceptLanguage'
+      Description: !Ref 'Description'
+      DisplayName:
+        'Fn::Join':
+           - ''
+           - -  Ref: Environment
+             -  '-eks-portfolio-'
+             -  Ref: 'AWS::Region'
+      ProviderName: !Ref 'ProviderName'
+      Tags:
+        - Key: PortfolioName
+          Value:
+            'Fn::Join':
+               - ''
+               - -  Ref: Environment
+                 -  '-eks-portfolio-'
+                 -  Ref: 'AWS::Region'
+  PortfolioPrincipalAssociation:
+    Type: AWS::ServiceCatalog::PortfolioPrincipalAssociation
+    Properties:
+      AcceptLanguage: !Ref 'AcceptLanguage'
+      PortfolioId: !Ref 'Portfolio'
+      PrincipalARN:
+        'Fn::Join':
+         - ''
+         - - 'arn:aws:iam::'
+           -  Ref: 'AWS::AccountId'
+           -  ':role/'
+           -  Ref: Environment
+           -  '-sc-enduser-'
+           -  Ref: 'AWS::Region'
+           - '-role'
+      PrincipalType: IAM
+  Product:
+    DependsOn:
+      - Portfolio
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      AcceptLanguage: !Ref 'AcceptLanguage'
+      Description: !Ref 'ProductDescription'
+      Distributor: !Ref 'ProductDistributor'
+      Name:
+        'Fn::Join':
+           - ''
+           - -  Ref: Environment
+             -  '-eks-provisioner-product-'
+             -  Ref: 'AWS::Region'
+      Owner: !Ref 'ProductOwner'
+      ProvisioningArtifactParameters:
+        - Description: !Ref 'ArtifactDescription'
+          Info:
+            LoadTemplateFromURL: !Ref 'ArtifactLoadTemplateFromUrl'
+          Name: !Ref 'ArtifactName'
+      SupportDescription: !Ref 'ProductSupportDescription'
+      SupportEmail: !Ref 'ProductSupportEmail'
+      SupportUrl: !Ref 'ProductSupportUrl'
+      Tags:
+        - Key: ProductName
+          Value:
+            'Fn::Join':
+               - ''
+               - -  Ref: Environment
+                 -  '-eks-provisioner-product-'
+                 -  Ref: 'AWS::Region'
+
+  PortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    DependsOn:
+      - Product
+      - Portfolio
+    Properties:
+      AcceptLanguage: !Ref 'AcceptLanguage'
+      PortfolioId: !Ref 'Portfolio'
+      ProductId: !Ref 'Product'
+  LaunchRoleConstraint:
+    DependsOn:
+      - PortfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      AcceptLanguage: !Ref 'AcceptLanguage'
+      Description:
+        'Fn::Join':
+           - ''
+           - -  'Launch Constraint for product: '
+             -  Ref: Environment
+             -  '-eks-provisioner-product-'
+             -  Ref: 'AWS::Region'
+      PortfolioId: !Ref 'Portfolio'
+      ProductId: !Ref 'Product'
+      RoleArn:
+        'Fn::Join':
+         - ''
+         - - 'arn:aws:iam::'
+           -  Ref: 'AWS::AccountId'
+           -  ':role/'
+           -  Ref: Environment
+           -  '-eks-portfolio-'
+           -  Ref: 'AWS::Region'
+           - '-role'
+  PortfolioParameterStore:
+    Type:     AWS::SSM::Parameter
+    DependsOn:
+      - Portfolio
+    Properties:
+      Type:   String
+      Name:
+        'Fn::Join':
+           - ''
+           - -  Ref: Environment
+             -  '-eks-portfolio-id-'
+             -  Ref: 'AWS::Region'
+      Value: !Ref 'Portfolio'
+      Description:  EKS Service Catalog Portfolio ID
+Outputs:
+  PortfolioId:
+    Description: The ID of your portfolio.
+    Value: !Ref 'Portfolio'
+  PortfolioName:
+    Description: The name of your portfolio.
+    Value: !GetAtt 'Portfolio.PortfolioName'
+  LaunchConstraintRoleName:
+    Description: The role arn for use with a launch constraint
+    Value: !Ref EKSProductRole
+  ProductName:
+    Description: The name of the product.
+    Value: !GetAtt 'Product.ProductName'
+  ProvisioningArtifactId:
+    Description: The ID of the provisioning artifact.
+    Value: !Ref 'Product'
+  ProvisioningArtifactIds:
+    Description: Provisioning artifact IDs.
+    Value: !GetAtt 'Product.ProvisioningArtifactIds'
+  ProvisioningArtifactNames:
+    Description: Provisioning artifact names.
+    Value: !GetAtt 'Product.ProvisioningArtifactNames'

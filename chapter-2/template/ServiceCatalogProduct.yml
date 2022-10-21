@@ -1,0 +1,170 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This sample template describes a Service Catalog CloudFormationProduct
+  resource, and an association of the product to an existing, user-specified portfolio.
+  
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Service Catalog Product configuration
+        Parameters:
+          - ProductDescription
+          - ProductDistributor
+          - ProductOwner
+          - ProductSupportDescription
+          - ProductSupportEmail
+          - ProductSupportUrl
+          - AcceptLanguage
+          - Environment
+      - Label:
+          default: Product Artifact configuration
+        Parameters:
+          - ArtifactName
+          - ArtifactDescription
+          - ArtifactLoadTemplateFromUrl
+    ParameterLabels:
+      Environment:
+        default: Which environment is this portfolio being setup?
+      AcceptLanguage:
+        default: Which language code you wish to use?
+      ArtifactDescription:
+        default: What is the artifact description?
+      ArtifactLoadTemplateFromUrl:
+        default: What is the URL from which to load the CloudFormation template?
+      ArtifactName:
+        default: What is the name of the artifact?
+      ProductDescription:
+        default: Product description
+      ProductDistributor:
+        default: Product distributor
+      ProductOwner:
+        default: Product Owner
+      ProductSupportDescription:
+        default: Product support description
+      ProductSupportEmail:
+        default: Product support email
+      ProductSupportUrl:
+        default: Product support URL
+Parameters:
+  AcceptLanguage:
+    AllowedValues:
+      - en
+      - jp
+      - zh
+    ConstraintDescription: please specify a valid value.
+    Default: en
+    Description: 'Please specify a language code.  Choose from: en - English (default),
+      jp - Japanese, zh - Chinese.'
+    Type: String
+  ArtifactDescription:
+    ConstraintDescription: please specify a value.
+    Default: Initial artifact version
+    Description: Please specify the description for the artifact.
+    MinLength: '1'
+    Type: String
+  ArtifactLoadTemplateFromUrl:
+    ConstraintDescription: please specify a value.
+    Description: 'Please specify the URL for the CloudFormation template to use.  For
+      example: https://s3.amazonaws.com/BUCKETNAME/...'
+    MinLength: '1'
+    Type: String
+  ArtifactName:
+    AllowedPattern: ^[a-zA-Z0-9\._-]+$
+    ConstraintDescription: please specify a valid value.
+    Default: v1
+    Description: 'Please specify the name for the artifact, for example: v1, v1.1,
+      v2.  No spaces are allowed.'
+    MinLength: '1'
+    Type: String
+  ProductDescription:
+    ConstraintDescription: please specify a value.
+    Default: Example product
+    Description: Please specify the description for the product.
+    MinLength: '1'
+    Type: String
+  ProductDistributor:
+    ConstraintDescription: please specify a value.
+    Default: Example distributor
+    Description: Please specify the distributor for the product.
+    MinLength: '1'
+    Type: String
+  ProductOwner:
+    ConstraintDescription: please specify a value.
+    Default: Example owner
+    Description: Please specify the owner for the product.
+    MinLength: '1'
+    Type: String
+  ProductSupportDescription:
+    ConstraintDescription: please specify a value.
+    Default: Example product description
+    Description: Please specify the support description for the product.
+    MinLength: '1'
+    Type: String
+  ProductSupportEmail:
+    ConstraintDescription: please specify a value.
+    Default: example@example.com
+    Description: Please specify the support email for the product.
+    MinLength: '1'
+    Type: String
+  ProductSupportUrl:
+    ConstraintDescription: please specify a value.
+    Default: https://www.example.com
+    Description: Please specify the support URL for the product.
+    MinLength: '1'
+    Type: String
+  Environment:
+    AllowedValues:
+      - DEV
+      - QA
+      - PROD
+    ConstraintDescription: please specify a valid value.
+    Type: String
+    Default: DEV
+Resources:
+  PortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    DependsOn:
+      - Product
+    Properties:
+      AcceptLanguage: !Ref 'AcceptLanguage'
+      PortfolioId:
+        'Fn::Join':
+           - ''
+           - - '{{resolve:ssm:'
+             -  Ref: Environment
+             -  '-eks-portfolio-id-'
+             -  Ref: 'AWS::Region'
+             - ':1}}'
+      ProductId: !Ref 'Product'
+  Product:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      AcceptLanguage: !Ref 'AcceptLanguage'
+      Description: !Ref 'ProductDescription'
+      Distributor: !Ref 'ProductDistributor'
+      Name: !Ref 'ArtifactName'
+      Owner: !Ref 'ProductOwner'
+      ProvisioningArtifactParameters:
+        - Description: !Ref 'ArtifactDescription'
+          Info:
+            LoadTemplateFromURL: !Ref 'ArtifactLoadTemplateFromUrl'
+          Name: !Ref 'ArtifactName'
+      SupportDescription: !Ref 'ProductSupportDescription'
+      SupportEmail: !Ref 'ProductSupportEmail'
+      SupportUrl: !Ref 'ProductSupportUrl'
+      Tags:
+        - Key: ProductName
+          Value: !Ref 'ArtifactName'
+Outputs:
+  ProductName:
+    Description: The name of the product.
+    Value: !GetAtt 'Product.ProductName'
+  ProvisioningArtifactId:
+    Description: The ID of the provisioning artifact.
+    Value: !Ref 'Product'
+  ProvisioningArtifactIds:
+    Description: Provisioning artifact IDs.
+    Value: !GetAtt 'Product.ProvisioningArtifactIds'
+  ProvisioningArtifactNames:
+    Description: Provisioning artifact names.
+    Value: !GetAtt 'Product.ProvisioningArtifactNames'

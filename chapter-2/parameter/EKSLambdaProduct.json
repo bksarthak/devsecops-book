@@ -1,0 +1,13 @@
+[
+  { "ParameterKey" : "AcceptLanguage","ParameterValue" : "en" },
+  { "ParameterKey" : "Environment", "ParameterValue" : "DEV" },
+  { "ParameterKey" : "ProductDescription","ParameterValue" : "EKS Lambda" },
+  { "ParameterKey" : "ProductDistributor", "ParameterValue" : "Example distributor" },
+  { "ParameterKey" : "ProductOwner","ParameterValue" : "Example owner" },
+  { "ParameterKey" : "ProductSupportDescription", "ParameterValue" : "Example product support description" },
+  { "ParameterKey" : "ProductSupportEmail","ParameterValue" : "example@example.com" },
+  { "ParameterKey" : "ProductSupportUrl", "ParameterValue" : "https://www.eksexample.com" },
+  { "ParameterKey" : "ArtifactName","ParameterValue" : "EKSLambda" },
+  { "ParameterKey" : "ArtifactDescription", "ParameterValue" : "v1.0" },
+  { "ParameterKey" : "ArtifactLoadTemplateFromUrl", "ParameterValue" : "https://s3.amazonaws.com/eksportfolioproducts/eks_lambda_vpc.yml" }
+]

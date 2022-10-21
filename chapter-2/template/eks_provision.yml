@@ -1,0 +1,442 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+ 'This template will provision an EKS Cluster based on the Service Catalog
+  products. **WARNING** This template creates an Amazon
+  EKS Cluster. You will be billed for the AWS resources used if you create a stack
+  from this template.'
+Metadata:
+   'AWS::CloudFormation::Interface':
+     ParameterGroups:
+       - Label:
+           default: Service Catalog Product Information
+ # Specify the Service Catalog Specific Information
+         Parameters:
+           - VPCProductName
+           - VPCProductVersion
+           - IAMProductName
+           - IAMProductVersion
+           - EKSProductName
+           - EKSProductVersion
+           - EKSLOGProductName
+           - EKSLOGProductVersion
+           - EKSLambdaProductName
+           - EKSLambdaProductVersion
+           - EKSNodeGroupProductName
+           - EKSNodeGroupProductVersion
+ # Specify the VPC Product Specific Information
+       - Label:
+           default: VPC Specific Information
+         Parameters:
+           - VpcCidr
+           - PrivateSubnetACidr
+           - PrivateSubnetBCidr
+           - PrivateSubnetCCidr
+           - PrivateSubnetDCidr
+           - PublicSubnetACidr
+           - PublicSubnetBCidr
+           - CreatePublicSubnets
+           - CreatePrivateSubnets
+
+ # Specify the EKS Product Specific Information
+       - Label:
+           default: EKS Specific Information
+         Parameters:
+           - VolumeSize1
+           - VolumeSize2
+           - VolumeSize3
+           - InstanceType1
+           - InstanceType2
+           - InstanceType3
+           - MinInstances1
+           - MaxInstances1
+           - DesiredInstances1
+           - MinInstances2
+           - MaxInstances2
+           - DesiredInstances2
+           - MinInstances3
+           - MaxInstances3
+           - DesiredInstances3
+           - EksVersion
+           - EksName
+           - EksNodeGroupName1
+           - EksNodeGroupName2
+           - EksNodeGroupName3
+
+  # Specify the EKS Log Product Specific Information
+       - Label:
+            default: EKS Log Specific Information
+         Parameters:
+            - EKSLogTypes
+  # Specify the EKS Lambda Product Specific Information
+       - Label:
+            default: EKS Log Specific Information
+         Parameters:
+            - S3BucketPath
+            - ZipFileName
+            - PublicIP1
+            - PublicIP2
+            - PublicIP3
+            - PublicIP4
+            - PublicIP5
+
+Parameters:
+  VPCProductName:
+    Description: VPC Product Name
+    Type: String
+  VPCProductVersion:
+    Description: VPC Product Version
+    Type: String
+  IAMProductName:
+    Description: IAM Product Name
+    Type: String
+  IAMProductVersion:
+    Description: IAM Product Version
+    Type: String
+  EKSProductName:
+    Description: EKS Product Name
+    Type: String
+  EKSProductVersion:
+    Description: EKS Product Version
+    Type: String
+  EKSLOGProductName:
+    Description: EKS Log Product Name
+    Type: String
+  EKSLOGProductVersion:
+    Description: EKS Log Product Version
+    Type: String
+  EKSLambdaProductName:
+    Description: EKS Log Product Name
+    Type: String
+  EKSLambdaProductVersion:
+    Description: EKS Log Product Version
+    Type: String
+  VpcCidr:
+    Description: VPC CIDR
+    Type: String
+  PrivateSubnetACidr:
+    Description: Private Subnet A CIDR
+    Type: String
+  PrivateSubnetBCidr:
+    Type: String
+    Description: Private Subnet B CIDR
+  PrivateSubnetCCidr:
+    Type: String
+    Description: Private Subnet C CIDR
+  PrivateSubnetDCidr:
+    Type: String
+    Description: Private Subnet D CIDR
+  PublicSubnetACidr:
+    Type: String
+    Description: Public Subnet A CIDR
+  PublicSubnetBCidr:
+    Type: String
+    Description: Public Subnet B CIDR
+  VolumeSize1:
+    Type: Number
+    Description: 'Enter EBS volume size in GiB for nodegroup 1'
+  VolumeSize2:
+    Type: Number
+    Description: 'Enter EBS volume size in GiB for nodegroup 2'
+  VolumeSize3:
+    Type: Number
+    Description: 'Enter EBS volume size in GiB for nodegroup 3'
+  InstanceType1:
+    Type: String
+    Description: 'Enter instance type for nodegroup 1'
+  InstanceType2:
+    Type: String
+    Description: 'Enter instance type for nodegroup 2'
+  InstanceType3:
+    Type: String
+    Description: 'Enter instance type for nodegroup 3'
+  MinInstances1:
+    Type: Number
+    Description: 'Enter the minimum number of worker nodes in nodegroup 1'
+  MaxInstances1:
+    Type: Number
+    Description: 'Enter the maximum number of worker nodes in nodegroup 1'
+  DesiredInstances1:
+    Type: Number
+    Description: 'Enter the desired starting number of worker nodes in nodegroup 1'
+  MinInstances2:
+    Type: Number
+    Description: 'Enter the minimum number of worker nodes in nodegroup 2'
+  MaxInstances2:
+    Type: Number
+    Description: 'Enter the maximum number of worker nodes in nodegroup 2'
+  DesiredInstances2:
+    Type: Number
+    Description: 'Enter the desired starting number of worker nodes in nodegroup 2'
+  MinInstances3:
+    Type: Number
+    Description: 'Enter the minimum number of worker nodes in nodegroup 3'
+  MaxInstances3:
+    Type: Number
+    Description: 'Enter the maximum number of worker nodes in nodegroup 3'
+  DesiredInstances3:
+    Type: Number
+    Description: 'Enter the desired starting number of worker nodes in nodegroup 3'
+  EksVersion:
+    Type: String
+    Description: 'Enter the EKS cluster version'
+  EKSLogTypes:
+    Type: String
+    Description: CloudWatch EKS log types
+  EksName:
+    Type: String
+    Description: 'Enter the EKS cluster name'
+  EKSNodeGroupProductName:
+    Type: String
+    Description: 'Enter the EKS Node Group Product Name'
+  EKSNodeGroupProductVersion:
+    Type: String
+    Description: 'Enter the EKS Node Group Product Version'
+  EndPointsProductName:
+    Type: String
+    Description: 'Enter the VPC Endpoints Product Name'
+  EndPointsProductVersion:
+    Type: String
+    Description: 'Enter the VPC Endpoints Product Version'
+  CreatePublicSubnets:
+    Description: Enter true or false to create public subnets
+    Type: String
+  CreatePrivateSubnets:
+    Type: String
+    Description: Enter true or false to create private subnets
+  EksNodeGroupName1:
+    Type: String
+    Description: 'Enter the EKS nodegroup1 name'
+  EksNodeGroupName2:
+    Type: String
+    Description: 'Enter the EKS nodegroup2 name'
+  EksNodeGroupName3:
+    Type: String
+    Description: 'Enter the EKS nodegroup3 name'
+  S3BucketPath:
+    Type: String
+    Description: 'S3 Bucket Path With key (e.g. load/files)'
+  ZipFileName:
+    Type: String
+    Description: Name of the zip file to be used by Lambda
+  PublicIP1:
+    Type: String
+    Description: Public IP addresses
+  PublicIP2:
+    Type: String
+    Description: Public IP addresses
+  PublicIP3:
+    Type: String
+    Description: Public IP addresses
+  PublicIP4:
+    Type: String
+    Description: Public IP addresses
+  PublicIP5:
+    Type: String
+    Description: Public IP addresses
+
+
+Resources:
+  VPCProvisionedProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProductName: !Ref VPCProductName
+      ProvisioningArtifactName: !Ref VPCProductVersion
+      ProvisioningParameters:
+        - Key: EksName
+          Value: !Ref EksName
+        - Key: VpcCidr
+          Value: !Ref VpcCidr
+        - Key: PrivateSubnetACidr
+          Value: !Ref PrivateSubnetACidr
+        - Key: PrivateSubnetBCidr
+          Value: !Ref PrivateSubnetBCidr
+        - Key: PrivateSubnetCCidr
+          Value: !Ref PrivateSubnetCCidr
+        - Key: CreatePublicSubnets
+          Value: !Ref CreatePublicSubnets
+        - Key: CreatePrivateSubnets
+          Value: !Ref CreatePrivateSubnets
+        - Key: PublicSubnetACidr
+          Value: !Ref PublicSubnetACidr
+        - Key: PublicSubnetBCidr
+          Value: !Ref PublicSubnetBCidr
+  EndPointsProvisionedProduct:
+    DependsOn: VPCProvisionedProduct
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProductName: !Ref EndPointsProductName
+      ProvisioningArtifactName: !Ref EndPointsProductVersion
+      ProvisioningParameters:
+        - Key: EksName
+          Value: !Ref EksName
+        - Key: Environment
+          Value: 'dev'
+  IAMProvisionedProduct:
+    DependsOn: VPCProvisionedProduct
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProductName: !Ref IAMProductName
+      ProvisioningArtifactName: !Ref IAMProductVersion
+      ProvisioningParameters:
+        - Key: EksName
+          Value: !Ref EksName
+  EKSProvisionedProduct:
+    DependsOn: IAMProvisionedProduct
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProductName: !Ref EKSProductName
+      ProvisioningArtifactName: !Ref EKSProductVersion
+      ProvisioningParameters:
+        - Key: EksName
+          Value: !Ref EksName
+        - Key: EksVersion
+          Value: !Ref EksVersion
+  EKSNodeGroup1ProvisionedProduct:
+    DependsOn: EKSProvisionedProduct
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProductName: !Ref EKSNodeGroupProductName
+      ProvisioningArtifactName: !Ref EKSNodeGroupProductVersion
+      ProvisioningParameters:
+        - Key: VolumeSize
+          Value: !Ref VolumeSize1
+        - Key: InstanceType
+          Value: !Ref InstanceType1
+        - Key: MinInstances
+          Value: !Ref MinInstances1
+        - Key: MaxInstances
+          Value: !Ref MaxInstances1
+        - Key: DesiredInstances
+          Value: !Ref DesiredInstances1
+        - Key: EksName
+          Value: !Ref EksName
+        - Key: EksVersion
+          Value: !Ref EksVersion
+        - Key: EksNodeGroupName
+          Value: !Ref EksNodeGroupName1
+  EKSNodeGroup2ProvisionedProduct:
+    DependsOn: EKSNodeGroup1ProvisionedProduct
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProductName: !Ref EKSNodeGroupProductName
+      ProvisioningArtifactName: !Ref EKSNodeGroupProductVersion
+      ProvisioningParameters:
+        - Key: VolumeSize
+          Value: !Ref VolumeSize2
+        - Key: InstanceType
+          Value: !Ref InstanceType2
+        - Key: MinInstances
+          Value: !Ref MinInstances2
+        - Key: MaxInstances
+          Value: !Ref MaxInstances2
+        - Key: DesiredInstances
+          Value: !Ref DesiredInstances2
+        - Key: EksName
+          Value: !Ref EksName
+        - Key: EksVersion
+          Value: !Ref EksVersion
+        - Key: EksNodeGroupName
+          Value: !Ref EksNodeGroupName2
+  EKSNodeGroup3ProvisionedProduct:
+    DependsOn: EKSNodeGroup2ProvisionedProduct
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProductName: !Ref EKSNodeGroupProductName
+      ProvisioningArtifactName: !Ref EKSNodeGroupProductVersion
+      ProvisioningParameters:
+        - Key: VolumeSize
+          Value: !Ref VolumeSize3
+        - Key: InstanceType
+          Value: !Ref InstanceType3
+        - Key: MinInstances
+          Value: !Ref MinInstances3
+        - Key: MaxInstances
+          Value: !Ref MaxInstances3
+        - Key: DesiredInstances
+          Value: !Ref DesiredInstances3
+        - Key: EksName
+          Value: !Ref EksName
+        - Key: EksVersion
+          Value: !Ref EksVersion
+        - Key: EksNodeGroupName
+          Value: !Ref EksNodeGroupName3
+  EKSLOGProvisionedProduct:
+    DependsOn: EKSNodeGroup3ProvisionedProduct
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProductName: !Ref EKSLOGProductName
+      ProvisioningArtifactName: !Ref EKSLOGProductVersion
+      ProvisioningParameters:
+        - Key: EKSLogTypes
+          Value: !Ref EKSLogTypes
+  EKSLambdaProvisionedProduct:
+    DependsOn:
+      - EKSNodeGroup1ProvisionedProduct
+      - EKSNodeGroup2ProvisionedProduct
+      - EKSNodeGroup3ProvisionedProduct
+    Type: "AWS::ServiceCatalog::CloudFormationProvisionedProduct"
+    Properties:
+      ProductName: !Ref EKSLambdaProductName
+      ProvisioningArtifactName: !Ref EKSLambdaProductVersion
+      ProvisioningParameters:
+        - Key: EksName
+          Value: !Ref EksName
+        - Key: S3BucketPath
+          Value: !Ref S3BucketPath
+        - Key: ZipFileName
+          Value: !Ref ZipFileName
+        - Key: PublicIP1
+          Value: !Ref PublicIP1
+        - Key: PublicIP2
+          Value: !Ref PublicIP2
+        - Key: PublicIP3
+          Value: !Ref PublicIP3
+        - Key: PublicIP4
+          Value: !Ref PublicIP4
+        - Key: PublicIP5
+          Value: !Ref PublicIP5
+Outputs:
+  VPCProvisionedProductId:
+    Value: !Ref VPCProvisionedProduct
+  VPCProvisionedProductRecordId:
+    Value: !GetAtt VPCProvisionedProduct.RecordId
+  VPCProvisionedProductStackArn:
+    Value: !GetAtt VPCProvisionedProduct.CloudformationStackArn
+  IAMProvisionedProductId:
+    Value: !Ref IAMProvisionedProduct
+  IAMProvisionedProductRecordId:
+    Value: !GetAtt IAMProvisionedProduct.RecordId
+  IAMProvisionedProductStackArn:
+    Value: !GetAtt IAMProvisionedProduct.CloudformationStackArn
+  EKSProvisionedProductId:
+    Value: !Ref EKSProvisionedProduct
+  EKSProvisionedProductRecordId:
+    Value: !GetAtt EKSProvisionedProduct.RecordId
+  EKSProvisionedProductStackArn:
+    Value: !GetAtt EKSProvisionedProduct.CloudformationStackArn
+  EKSLOGProvisionedProductId:
+    Value: !Ref EKSLOGProvisionedProduct
+  EKSLOGProvisionedProductRecordId:
+    Value: !GetAtt EKSLOGProvisionedProduct.RecordId
+  EKSLOGProvisionedProductStackArn:
+    Value: !GetAtt EKSLOGProvisionedProduct.CloudformationStackArn
+  EKSNodeGroup1ProvisionedProductId:
+    Value: !Ref EKSNodeGroup1ProvisionedProduct
+  EKSNodeGroup1ProvisionedProductRecordId:
+    Value: !GetAtt EKSNodeGroup1ProvisionedProduct.RecordId
+  EKSNodeGroup1ProvisionedProductStackArn:
+    Value: !GetAtt EKSNodeGroup1ProvisionedProduct.CloudformationStackArn
+  EKSNodeGroup2ProvisionedProductId:
+    Value: !Ref EKSNodeGroup2ProvisionedProduct
+  EKSNodeGroup2ProvisionedProductRecordId:
+    Value: !GetAtt EKSNodeGroup2ProvisionedProduct.RecordId
+  EKSNodeGroup2ProvisionedProductStackArn:
+    Value: !GetAtt EKSNodeGroup2ProvisionedProduct.CloudformationStackArn
+  EKSNodeGroup3ProvisionedProductId:
+    Value: !Ref EKSNodeGroup3ProvisionedProduct
+  EKSNodeGroup3ProvisionedProductRecordId:
+    Value: !GetAtt EKSNodeGroup3ProvisionedProduct.RecordId
+  EKSNodeGroup3ProvisionedProductStackArn:
+    Value: !GetAtt EKSNodeGroup3ProvisionedProduct.CloudformationStackArn
+  EKSLambdaProvisionedProductStackArn:
+    Value: !GetAtt EKSLambdaProvisionedProduct.CloudformationStackArn

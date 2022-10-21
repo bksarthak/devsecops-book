@@ -1,0 +1,137 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This template will create the EKS cluster the POC'
+#==================================================
+# Parameters
+#==================================================
+Parameters:
+  EksName:
+    Type: String
+    Description: 'Enter the EKS name'
+  S3BucketPath:
+    Type: String
+    Description: 'S3 Bucket Path With key (e.g. load/files)'
+  ZipFileName:
+    Type: String
+    Description: Name of the zip file to be used by Lambda
+    Default: lambda.zip
+  PublicIP1:
+    Type: String
+    Description: Public IP addresses
+    Default: "173.36.0.0/14"
+  PublicIP2:
+    Type: String
+    Description: Public IP addresses
+    Default: "72.163.0.0/16"
+  PublicIP3:
+    Type: String
+    Description: Public IP addresses
+    Default: "128.107.0.0/16"
+  PublicIP4:
+    Type: String
+    Description: Public IP addresses
+    Default: "144.254.0.0/16"
+  PublicIP5:
+    Type: String
+    Description: Public IP addresses
+    Default: "52.24.252.26/32"
+#==================================================
+# Resources
+#==================================================
+Resources:
+## Creates EKS cluster control plane
+  EKSNetworkConfig:
+    Type: 'Custom::EKSSetNetworkConfig'
+    Properties:
+      ServiceToken: !GetAtt
+        - SetEKSNetworkConfig
+        - Arn
+      ClusterName: !Ref EksName
+      PublicIP1: !Ref PublicIP1
+      PublicIP2: !Ref PublicIP2
+      PublicIP3: !Ref PublicIP3
+      PublicIP4: !Ref PublicIP4
+      PublicIP5: !Ref PublicIP5
+#==================================================
+# Custom Resource to Set EKS Cluster Network Config
+#==================================================
+  SetEKSNetworkConfig:
+    Properties:
+      Code:
+         S3Bucket: !Ref S3BucketPath
+         S3Key: !Ref ZipFileName
+      Description: Set EKS Network configuration
+      VpcConfig:
+          SecurityGroupIds:
+            - 'Fn::Join':
+                - ''
+                - - '{{resolve:ssm:'
+                  - !Ref EksName
+                  - "-"
+                  - "SecurityGroupId:1}}"
+          SubnetIds:
+            - 'Fn::Join':
+                - ''
+                - - '{{resolve:ssm:'
+                  - !Ref EksName
+                  - "-"
+                  - "PrivateSubnetA:1}}"
+            - 'Fn::Join':
+                - ''
+                - - '{{resolve:ssm:'
+                  - !Ref EksName
+                  - "-"
+                  - "PrivateSubnetB:1}}"
+      Handler: lambda.lambda_handler
+      Role: !GetAtt
+         - SetEKSRoleDefine
+         - Arn
+      Runtime: python3.6
+      Timeout: 240
+    Type: 'AWS::Lambda::Function'
+  SetEKSRoleDefine:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/AmazonEKSClusterPolicy'
+      Path: /
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                  - ec2:Describe*
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                  - 'ssm:DeleteParameters'
+                  - 'ssm:DescribeParameters'
+                  - 'ssm:GetParameter'
+                  - 'ssm:GetParameters'
+                  - 'ssm:PutParameter'
+                  - 'ssm:AddTagsToResource'
+                Effect: Allow
+                Resource: '*'
+              - Action:
+                  - 'eks:UpdateClusterConfig'
+                  - 'eks:DescribeCluster'
+                Effect: Allow
+                Resource: !Sub 'arn:aws:eks:${AWS::Region}:${AWS::AccountId}:cluster/*'
+              - Action: 'logs:CreateLogGroup'
+                Effect: Allow
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+              - Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Effect: Allow
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*'
+            Version: 2012-10-17
+          PolicyName: !Sub '${AWS::StackName}-EKSNetworkConfigPolicy'
+    Type: 'AWS::IAM::Role'
