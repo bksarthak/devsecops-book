@@ -47,7 +47,7 @@ Resources:
 # SSM Parameter with CloudWatch Agent Configuration
 #==================================================
 
-  CloudWatchConfigParemeter:
+  CloudWatchConfigParameter:
     DependsOn: EC2Instance
     Type: AWS::SSM::Parameter
     Properties:
