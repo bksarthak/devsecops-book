@@ -1,5 +1,5 @@
 {
-    "description": "Remove ingress and egress traffic rules for a given security group ",
+    "description": "Remove ingress and egress traffic rules for a given security group",
     "stopConditions": [
         {
             "source": "none"
