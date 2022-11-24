@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Template to create Codecommit repository, CodePipeline
+Description: Template to create CodeCommit repository, CodePipeline
 Parameters:
   CodeCommitName:
     Type: String
@@ -10,7 +10,7 @@ Resources:
     Type: AWS::CodeCommit::Repository
     Properties:
       RepositoryName: !Ref CodeCommitName
-      RepositoryDescription: Repo created for automatoonz team infra Code
+      RepositoryDescription: Repo created for Automatoonz team infra code
       Tags:
         - Key: Team
           Value: Automatoonz
