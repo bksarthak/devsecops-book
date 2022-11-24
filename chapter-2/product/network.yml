@@ -1,0 +1,372 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This template will create the network configuration for EKS'
+
+Parameters:
+  EksName:
+    Type: String
+    Description: 'Enter the EKS cluster name'
+## Get VPC CIDR blocks
+  VpcCidr:
+    Type: String
+    Default: 10.223.64.0/20
+    Description: Enter CIDR for VPC
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]|3[2]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28 (or /32)
+## Get subnet CIDR blocks
+  PrivateSubnetACidr:
+    Type: String
+    Default: 10.223.64.0/22
+    Description: CIDR range for Private Subnet A
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]|3[2]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+  PrivateSubnetBCidr:
+    Type: String
+    Default: 10.223.68.0/22
+    Description: CIDR range for Private Subnet B
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]|3[2]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+  PrivateSubnetCCidr:
+    Type: String
+    Default: 10.223.76.0/23
+    Description: CIDR range for Private Subnet C
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]|3[2]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+  PublicSubnetACidr:
+    Type: String
+    Default: 10.223.72.0/23
+    Description: CIDR range for Public Subnet A
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]|3[2]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+  PublicSubnetBCidr:
+    Type: String
+    Default: 10.223.74.0/23
+    Description: CIDR range for Public Subnet B
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]|3[2]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+  CreatePublicSubnets:
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'true'
+    Description: >-
+      Set to true to create public subnets. If false, the CIDR parameters
+      for ALL public subnets will be ignored.
+    Type: String
+  CreatePrivateSubnets:
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
+    Description: >-
+      Set to true to create private subnets in each Availability
+      Zone. If false, the CIDR parameters for those subnets will be ignored.
+## Creates VPCs
+Conditions:
+# If set to 'true' create public subnets
+  PublicSubnetsCondition: !Equals
+    - !Ref CreatePublicSubnets
+    - 'true'
+# If set to 'true' create private subnets az3
+  PrivateSubnetsCondition: !Equals
+    - !Ref CreatePrivateSubnets
+    - 'true'
+# If both private and public subnets then a NAT is required
+  NATGW: !And
+    - Condition: PublicSubnetsCondition
+    - Condition: PrivateSubnetsCondition
+# This section outlines the AWS resources that will be created as a result of running
+# this CloudFormation stack.
+Resources:
+## Creates VPCs
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-Vpc'
+## Creates public and private A&B subnets for each VPC
+  PrivateSubnetA:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+      CidrBlock: !Ref PrivateSubnetACidr
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PrivSubA'
+  PrivateSubnetB:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs
+      CidrBlock: !Ref PrivateSubnetBCidr
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PrivSubB'
+  PrivateSubnetC:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+      CidrBlock: !Ref PrivateSubnetCCidr
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PrivSubC'
+  PublicSubnetA:
+    Condition: PublicSubnetsCondition
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+      CidrBlock: !Ref PublicSubnetACidr
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PubSubA'
+  PublicSubnetB:
+    Condition: PublicSubnetsCondition
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs
+      CidrBlock: !Ref PublicSubnetBCidr
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PubSubB'
+## Creates Internet Gateways for VPCs and attaches them
+  Igw:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-Igw'
+  IgwAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref Igw
+      VpcId: !Ref Vpc
+## Creates NAT Gateways and EIPs
+  PubSubAEip:
+    Condition: NATGW
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PubSubAEip'
+  PubSubBEip:
+    Condition: NATGW
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PubSubBEip'
+  PubSubANat:
+    Condition: NATGW
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt PubSubAEip.AllocationId
+      SubnetId: !Ref PublicSubnetA
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PubSubANatGw'
+  PubSubBNat:
+    Condition: NATGW
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt PubSubBEip.AllocationId
+      SubnetId: !Ref PublicSubnetB
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PubSubBNatGw'
+## Creates the route tables and routes to associate with nat gateway
+  PrivRouteTableA:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PrivRtA'
+  PrivRouteTableB:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PrivRtB'
+  PubRouteTable:
+    Condition: PublicSubnetsCondition
+    Type:  AWS::EC2::RouteTable
+    DependsOn: IgwAttach
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksName}-PubRtA'
+  PrivSubARtAssoc:
+    Condition: PrivateSubnetsCondition
+    DependsOn: PrivRouteTableA
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivRouteTableA
+      SubnetId: !Ref PrivateSubnetA
+  PrivSubBRtAssoc:
+    Condition: PrivateSubnetsCondition
+    DependsOn: PrivRouteTableB
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivRouteTableB
+      SubnetId: !Ref PrivateSubnetB
+  PrivSubCRtAssoc:
+    Condition: PrivateSubnetsCondition
+    DependsOn: PrivRouteTableA
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivRouteTableA
+      SubnetId: !Ref PrivateSubnetC
+  PubSubARtAssoc:
+    Condition: PublicSubnetsCondition
+    Type:  AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref PublicSubnetA
+  PubSubBRtAssoc:
+    Condition: PublicSubnetsCondition
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref PublicSubnetB
+  PrivSubARouteA:
+    DependsOn: PrivSubARtAssoc
+    Condition: NATGW
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref PubSubANat
+      RouteTableId: !Ref PrivRouteTableA
+  PrivSubARouteB:
+    DependsOn: PrivSubBRtAssoc
+    Condition: NATGW
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref PubSubBNat
+      RouteTableId: !Ref PrivRouteTableB
+  PubSubARoute:
+    Condition: PublicSubnetsCondition
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref Igw
+      RouteTableId: !Ref PubRouteTable
+## Creates Security Groups and Ingress rules
+  PrivSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Vpc
+      GroupDescription: 'Security Group allowing internal traffic'
+  PrivSgIngress1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref PrivSecurityGroup
+      IpProtocol:  tcp
+      FromPort: 0
+      ToPort: 65535
+      SourceSecurityGroupId: !Ref PrivSecurityGroup
+## Store parameters in SSM for use in other stacks
+  VpcParameterStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-Vpc'
+      Value: !Ref Vpc
+      Description: 'Contains VPC ID'
+  VpcCidrParameterStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-VpcCidr'
+      Value: !Ref VpcCidr
+      Description: 'Contains VPC Cidr'
+  PrivSubAParameterStore:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-PrivateSubnetA'
+      Value: !Ref PrivateSubnetA
+      Description: 'Contains Private Subnet A'
+  PrivSubBParameterStore:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-PrivateSubnetB'
+      Value: !Ref PrivateSubnetB
+      Description: 'Contains Private Subnet B'
+  PrivSubCParameterStore:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-PrivateSubnetC'
+      Value: !Ref PrivateSubnetC
+      Description: 'Contains Private Subnet C'
+  PubSubAParameterStore:
+    Condition: PublicSubnetsCondition
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-PublicSubnetA'
+      Value: !Ref PublicSubnetA
+      Description: 'Contains Public Subnet A'
+  PubSubBParameterStore:
+    Condition: PublicSubnetsCondition
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-PublicSubnetB'
+      Value: !Ref PublicSubnetB
+      Description: 'Contains Public Subnet B'
+  PrivSecurityGroupParameterStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-PrivSecurityGroup'
+      Value: !Ref PrivSecurityGroup
+      Description: 'Contains private SG'
+  PrivRouteTableAParameterStore:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-PrivRouteTableA'
+      Value: !Ref PrivRouteTableA
+      Description: 'Private Route Table A'
+  PrivRouteTableBParameterStore:
+    Condition: PrivateSubnetsCondition
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${EksName}-PrivRouteTableB'
+      Value: !Ref PrivRouteTableB
+      Description: 'Private Route Table B'

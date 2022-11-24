@@ -1,0 +1,90 @@
+Parameters:
+  EksName:
+    Type: String
+    Description: 'Enter the EKS cluster name'
+## Get instance type for nodegroup 4
+  InstanceType:
+    Type: String
+    Default: m5.4xlarge
+    AllowedValues:
+      - t2.xlarge
+      - c5.4xlarge
+      - c5.24xlarge
+      - t3.medium
+      - m5.4xlarge
+      - m5.16xlarge
+      - r5.12xlarge
+    Description: 'Enter instance type for nodegroup 4'
+## Get nodegroup 4 size requirements
+  MinInstances:
+    Type: Number
+    Default: 1
+    Description: 'Enter the minimum number of worker nodes in nodegroup 4'
+  MaxInstances:
+    Type: Number
+    Default: 3
+    Description: 'Enter the maximum number of worker nodes in nodegroup 4'
+  DesiredInstances:
+    Type: Number
+    Default: 1
+    Description: 'Enter the desired starting number of worker nodes in nodegroup 4'
+  VolumeSize:
+    Type: Number
+    Default: 200
+    Description: 'Enter EBS volume size in GiB for nodegroup'
+
+Resources:
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              DeleteOnTermination: true
+              VolumeSize: !Ref VolumeSize
+              VolumeType: gp2
+        InstanceType: !Ref InstanceType
+        SecurityGroupIds:
+          - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivSecurityGroup:1}}"
+
+## Creates EKS worker nodegroup 4
+## note: creates a nodegroup with nodes in a private subnet
+  EksNodegroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Ref EksName
+      ForceUpdateEnabled: false
+      LaunchTemplate:
+        Id: !Ref LaunchTemplate
+      NodegroupName: !Sub '${EksName}-EksNodegroup'
+      NodeRole:
+        'Fn::Join':
+          - ''
+          - - '{{resolve:ssm:'
+            - !Ref EksName
+            - "-"
+            - "EksNodegroupRole:1}}"
+      Subnets:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      ScalingConfig:
+        DesiredSize: !Ref DesiredInstances
+        MinSize: !Ref MinInstances
+        MaxSize: !Ref MaxInstances
+      Tags: {'k8s.io/cluster-autoscaler/enabled':'true'}

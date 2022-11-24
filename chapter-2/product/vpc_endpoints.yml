@@ -1,0 +1,1126 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  "This template creates the VPC Endpoints that we use to accsess AWS services
+  in the Private Subnets."
+
+Parameters:
+  Environment:
+    AllowedValues:
+      - 'dev'
+      - 'devops'
+      - 'uat'
+    Description: |
+      "Set environment in which the VPC will be created."
+    Type: String
+    Default: dev
+  EksName:
+    Type: String
+
+Resources:
+  ServicecatalogEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.servicecatalog
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  LogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.logs
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  CloudformationEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.cloudformation
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  AutoscalingEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.autoscaling
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  EC2MessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.ec2messages
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  EC2Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.ec2
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  SecretsManagerEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.secretsmanager
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  # GlueEndpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.glue
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  # StepFunctionsEndpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.states
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  KMSEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.kms
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  SSMEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.ssm
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  ECSEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.ecs
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  ECSAgentEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.ecs-agent
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  ECSTelemetryEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.ecs-telemetry
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  SSMMessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.ssmmessages
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  CloudWatchEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.logs
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  CloudWatchEventsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.events
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  # CodeArtifactRepoEndpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.codeartifact.repositories
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  # CodeArtifactAPIEndpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: false
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.codeartifact.api
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  ECREndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.ecr.api
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  ECRDkrEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.ecr.dkr
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  GitCodeCommitEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.git-codecommit
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  CodeCommitEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.codecommit
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  CodePipelineEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.codepipeline
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  StsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.sts
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  # SageMakerRuntimeEndpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.sagemaker.runtime
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  # SageMakerAPIEndpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.sagemaker.api
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  # ExecuteAPIEndpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.execute-api
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  # ElasticMapReduceEndpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.elasticmapreduce
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  ElasticLoadBalancingEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.elasticloadbalancing
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  CloudTrailEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.cloudtrail
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  # AthenaEndpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.athena
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  S3EndPoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      RouteTableIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivRouteTableA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivRouteTableB:1}}"
+      ServiceName: com.amazonaws.us-west-2.s3
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+      VpcEndpointType: Gateway
+
+  # DynamoEndPoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     RouteTableIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnetRouteTable1"
+  #     ServiceName: com.amazonaws.us-west-2.dynamodb
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+  #     VpcEndpointType: Gateway
+
+  # SQSEndPoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.sqs
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  SNSEndPoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SecurityGroupIds:
+        - !Ref EndpointSG
+      ServiceName: com.amazonaws.us-west-2.sns
+      SubnetIds:
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetA:1}}"
+        - 'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "PrivateSubnetB:1}}"
+      VpcEndpointType: Interface
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+  # ConfigEndPoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     PrivateDnsEnabled: true
+  #     SecurityGroupIds:
+  #       - !Ref EndpointSG
+  #     ServiceName: com.amazonaws.us-west-2.config
+  #     SubnetIds:
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z1ID"
+  #       - Fn::ImportValue: !Sub "${NetworkStackName}-PrivateSubnet2Z2ID"
+  #     VpcEndpointType: Interface
+  #     VpcId:
+  #       Fn::ImportValue: !Sub "${NetworkStackName}-VPCID"
+
+  EndpointSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Endpoint Base Security Group
+      GroupName: !Join [ "-", [ !Ref Environment, vpc, endpoints, sg ] ]
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        CidrIp:
+          'Fn::Join':
+              - ''
+              - - '{{resolve:ssm:'
+                - !Ref EksName
+                - "-"
+                - "VpcCidr:1}}"
+        FromPort: 443
+        ToPort: 443
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+      VpcId:
+        'Fn::Join':
+            - ''
+            - - '{{resolve:ssm:'
+              - !Ref EksName
+              - "-"
+              - "Vpc:1}}"
+
+Outputs:
+  AutoscalingEndpoint:
+    Description: "Autoscaling Interface VPC Endpoint"
+    Value: !Ref AutoscalingEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-AutoscalingEndpoint'
+
+  CloudformationEndpoint:
+    Description: "Cloudformation Interface VPC Endpoint"
+    Value: !Ref CloudformationEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudformationEndpoint'
+
+  LogsEndpoint:
+    Description: "Logs Interface VPC Endpoint"
+    Value: !Ref LogsEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-LogsEndpoint'
+
+  ServicecatalogEndpoint:
+    Description: "Service catalog Interface VPC Endpoint"
+    Value: !Ref ServicecatalogEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-ServicecatalogEndpoint'
+
+  # DynamoEndPoint:
+  #   Description: Dynamo Interface VPC Endpoint
+  #   Value: !Ref DynamoEndPoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-DynamoEndPoint'
+
+  # SQSEndPoint:
+  #   Description: SQS Interface VPC Endpoint
+  #   Value: !Ref SQSEndPoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-SQSEndPoint'
+
+  SNSEndPoint:
+    Description: "SNS Interface VPC Endpoint"
+    Value: !Ref SNSEndPoint
+    Export:
+      Name: !Sub '${AWS::StackName}-SNSEndPoint'
+
+  # ConfigEndPoint:
+  #   Description: Config VPC Endpoint
+  #   Value: !Ref ConfigEndPoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-ConfigEndPoint'
+
+  CloudTrailEndpoint:
+    Description: "CloudTrail Interface VPC Endpoint"
+    Value: !Ref CloudTrailEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudTrailEndpoint'
+
+  # AthenaEndpoint:
+  #   Description: Athena Interface VPC Endpoint
+  #   Value: !Ref AthenaEndpoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-AthenaEndpoint'
+
+  # ElasticMapReduceEndpoint:
+  #   Description: ElasticMapReduce Interface VPC Endpoint
+  #   Value: !Ref ElasticMapReduceEndpoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-ElasticMapReduceEndpoint'
+
+  ElasticLoadBalancingEndpoint:
+    Description: "Elastic Load Balancing Interface VPC Endpoint"
+    Value: !Ref ElasticLoadBalancingEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-ElasticLoadBalancingEndpoint'
+
+  # SageMakerRuntimeEndpoint:
+  #   Description: SageMaker Runtime Interface VPC Endpoint
+  #   Value: !Ref SageMakerRuntimeEndpoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-SageMakerRuntimeEndpoint'
+
+  # SageMakerAPIEndpoint:
+  #   Description: SageMaker Interface VPC Endpoint
+  #   Value: !Ref SageMakerAPIEndpoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-SageMakerAPIEndpoint'
+
+  StsEndpoint:
+    Description: "StsEndpoint Interface VPC Endpoint"
+    Value: !Ref StsEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-StsEndpoint'
+
+  GitCodeCommitEndpoint:
+    Description: "GitCodeCommit VPC Endpoint"
+    Value: !Ref GitCodeCommitEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-GitCodeCommitEndpoint'
+
+  CodeCommitEndpoint:
+    Description: "CodeCommit VPC Endpoint"
+    Value: !Ref CodeCommitEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-CodeCommitEndpoint'
+
+  CodePipelineEndpoint:
+    Description: "CodePipeline VPC Endpoint"
+    Value: !Ref CodePipelineEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-CodePipelineEndpoint'
+
+  S3EndPoint:
+    Description: "S3 Gateway VPC Endpoint"
+    Value: !Ref S3EndPoint
+    Export:
+      Name: !Sub '${AWS::StackName}-S3EndPoint'
+
+  ECRDkrEndpoint:
+    Description: "ECR Docker Interface VPC Endpoint"
+    Value: !Ref ECRDkrEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-ECRDkrEndpoint'
+
+  ECREndpoint:
+    Description: "ECR Interface VPC Endpoint"
+    Value: !Ref ECREndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-ECREndpoint'
+
+  # CodeArtifactAPIEndpoint:
+  #   Description: CodeArtifactAPI Interface VPC Endpoint
+  #   Value: !Ref CodeArtifactAPIEndpoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-CodeArtifactAPIEndpoint'
+
+  # CodeArtifactRepoEndpoint:
+  #   Description: CodeArtifact Repository Endpoint Interface VPC Endpoint
+  #   Value: !Ref CodeArtifactRepoEndpoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-CodeArtifactRepoEndpoint'
+
+  CloudWatchEndpoint:
+    Description: "CloudWatch Interface VPC Endpoint"
+    Value: !Ref CloudWatchEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudWatchEndpoint'
+
+  CloudWatchEventsEndpoint:
+    Description: "CloudWatchEventsEndpoint Interface VPC Endpoint"
+    Value: !Ref CloudWatchEventsEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudWatchEventsEndpoint'
+
+  SSMMessagesEndpoint:
+    Description: "Systems Manager Messages Interface VPC Endpoint"
+    Value: !Ref SSMMessagesEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-SSMMessagesEndpoint'
+
+  SSMEndpoint:
+    Description: "Systems Manager Interface VPC Endpoint"
+    Value: !Ref SSMEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-SSMEndpoint'
+
+  KMSEndpoint:
+    Description: "KMS Interface VPC Endpoint"
+    Value: !Ref KMSEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-KMSEndpoint'
+
+  # StepFunctionsEndpoint:
+  #   Description: Step Functions Interface VPC Endpoint
+  #   Value: !Ref StepFunctionsEndpoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-StepFunctionsEndpoint'
+
+  # GlueEndpoint:
+  #   Description: Glue Interface VPC Endpoint
+  #   Value: !Ref GlueEndpoint
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-GlueEndpoint'
+
+  SecretsManagerEndpoint:
+    Description: "Secrets Manager Interface VPC Endpoint"
+    Value: !Ref SecretsManagerEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-SecretsManagerEndpoint'
+
+  EC2Endpoint:
+    Description: "EC2 Interface VPC Endpoint"
+    Value: !Ref EC2Endpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-EC2Endpoint'
+
+  EC2MessagesEndpoint:
+    Description: E"C2 Messages Interface VPC Endpoint"
+    Value: !Ref EC2MessagesEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-EC2MessagesEndpoint'
+
+  ECSEndpoint:
+    Description: "ECS Interface VPC Endpoint"
+    Value: !Ref ECSEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-ECSEndpoint'
+
+  ECSAgentEndpoint:
+    Description: "ECS Agent Interface VPC Endpoint"
+    Value: !Ref ECSAgentEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-ECSAgentEndpoint'
+
+  ECSTelemetryEndpoint:
+    Description: "ECS Telemetry Interface VPC Endpoint"
+    Value: !Ref ECSTelemetryEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-ECSTelemtryEndpoint'

@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create CloudWatch Event Rule which enables control plane logging in EKS every 20minutes. As of June 07 2020, CloudFormation does not provide any method to enable control plane logging of EKS on launch. It is to be noted that clusters which are in any state other than `Available` will not be part of this remediation.Please enter the log types you want to enable in the Lambda `EnableLoggingLambda` function's Environment variables. Default is set to all available log types.
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: CloudWatch EKS Logging Types
+        Parameters:
+          - EKSLogTypes
+
+Parameters:
+  EKSLogTypes:
+      Description: CloudWatch EKS log types which is all of the log types by default. Modify based on your needs.
+      Type: String
+      Default: "api,audit,authenticator,controllerManager,scheduler"
+
+Resources:
+  DetectEventRule: #CloudWatchEvent rule which runs every 20 minutes
+    Type: AWS::Events::Rule
+    Properties:
+      Name: eks-enable-cluster-logging
+      Description: Event rule which looks for CreateCluster event and enables audit logs for control plane
+      ScheduleExpression: "rate(20 minutes)"
+      RoleArn: !GetAtt CWEIAMRole.Arn
+      Targets:
+        - Arn: !GetAtt EnableLoggingLambda.Arn
+          Id: LambdaFunc
+  CWEIAMRole: #CWE event rule role and policy
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Description: Role for CWE rules to assume to trigger
+      Path: /
+      RoleName: events-invoke-lambda
+  PermissionForLambdaInvocation: #Lambda resource policy to allow the CWE rule to invoke the function
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref EnableLoggingLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DetectEventRule.Arn
+  CWEIAMPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: cwe-invoke-lambda
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt EnableLoggingLambda.Arn
+      Roles:
+        - !Ref CWEIAMRole
+  #Lambda policy and role
+  LambdaIAMPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: lambda_eks_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - eks:UpdateClusterConfig
+              - eks:ListClusters
+              - eks:TagResource
+              - eks:ListTagsForResource
+            Resource: '*' #this is deliberate to do * since the remediation needs to be possible on all clusters
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+            Resource: '*'  #the log group is created automatically by Lambda, and there are no sensitive data passed through to logs. Please feel free to lock this down to a particular group if there is an existing CWL group
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - '*' #CFN doesn't let you create custom log stream names so this cannot be controlled. No sensitive information is passed into logs.
+      Roles:
+        - !Ref LambdaIAMRole
+  LambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Description: Role for Lambda to assume to make actions
+      Path: /
+      RoleName: lambda-exec
+  EnableLoggingLambda: #Lambda function
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda which updates the EKS clusters to enable the
+      FunctionName: enable-eks-control-logging
+      Environment:
+        Variables:
+          logtypes: !Ref EKSLogTypes
+          REGION: !Ref 'AWS::Region'
+          ACCOUNT: !Ref 'AWS::AccountId'
+      Handler: index.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt LambdaIAMRole.Arn
+      Code:
+        ZipFile: |
+          # Function: Enable-EKS-Control-Plane-Logging
+          # Purpose:  When an EKS cluster is created, enable CloudWatch logging
+
+          import boto3, os, sys, json, logging
+          from botocore.exceptions import ClientError
+
+          def lambda_handler(event, context):
+            try:
+              eks_client = boto3.client('eks')
+              log_types = os.environ['logtypes'].split(',')
+              marker = None
+              # Get the list of EKS clusters
+              paginator_response = eks_client.get_paginator('list_clusters')
+              paginator_response_iterator = paginator_response.paginate(
+                                              PaginationConfig = {
+                                                  'PageSize': 10,
+                                                  'StartingToken': marker
+                                              })
+              # Loop through and enable CloudWatch logging on the clusters.
+              for page in paginator_response_iterator:
+                  cluster_names = page['clusters']
+                  for cluster in cluster_names:
+              # Setup getting tags from EKS clusters to determine if logging should be enabled
+                     aws_account = os.environ['ACCOUNT']
+                     aws_region = os.environ['REGION']
+                     cluster_arn = "arn:aws:eks:" + aws_region + ":" + aws_account + ":cluster/" + cluster
+                     eks_tags = eks_client.list_tags_for_resource(resourceArn=cluster_arn)
+             # Determine if the tag 'Logging' is defined for this cluster
+                     if 'tags' in eks_tags:
+                      if 'Logging' in eks_tags['tags']:
+              # If 'Logging' tag equal 'Enabled' then enable CloudWatch logs.
+                       if (eks_tags['tags']['Logging'] == 'Enabled'):
+                         update_cluster_logging(cluster, eks_client, log_types)
+
+              return
+              try:
+                  marker = page['Marker']
+                  logging.info('Next paginator marker:'+marker)
+              except KeyError:
+                  sys.exit()
+            except (ClientError, RuntimeError, NameError) as e:
+              print('Error recieved: %s' %e)
+
+          # Function to enable CloudWatch on EKS cluster.
+          def update_cluster_logging(cname,boto3client,logtypes):
+              try:
+                  boto3client.update_cluster_config(
+                      name = cname,
+                      logging = {
+                              'clusterLogging':[{
+                                  'types':logtypes,
+                                  'enabled':True
+                                  }]
+                          }
+                      )
+              except (ClientError,RuntimeError,NameError, InvalidParameterException) as e:
+                  print ('Error received while updating cluster : %s' %e)

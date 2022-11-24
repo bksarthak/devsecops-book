@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey" : "AcceptLanguage",
+    "ParameterValue" : "en"
+  },
+  {
+    "ParameterKey" : "Description",
+    "ParameterValue" : "Master portfolio"
+  },
+  {
+    "ParameterKey" : "DisplayName",
+    "ParameterValue" : "master-portfolio"
+  },
+  {
+    "ParameterKey" : "PrincipalArnStack",
+    "ParameterValue" : "SCMaster"
+  },
+  {
+    "ParameterKey" : "ProviderName",
+    "ParameterValue" : "DEMO-IT"
+  }
+]

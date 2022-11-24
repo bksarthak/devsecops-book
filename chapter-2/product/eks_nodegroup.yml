@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This template will create the EKS Nodegroup'
+
+Parameters:
+  VolumeSize:
+    Type: Number
+    Default: 200
+    Description: 'Enter EBS volume size in GiB for nodegroup'
+## Get instance type for nodegroup 1
+  InstanceType:
+    Type: String
+    Default: m5.4xlarge
+    AllowedValues:
+      - c5.4xlarge
+      - c5.24xlarge
+      - t3.medium
+      - m5.4xlarge
+      - m5.16xlarge
+      - r5.12xlarge
+    Description: 'Enter instance type for nodegroup 1'
+## Get nodegroup 1 size requirements
+  MinInstances:
+    Type: Number
+    Default: 1
+    Description: 'Enter the minimum number of worker nodes in nodegroup'
+  MaxInstances:
+    Type: Number
+    Default: 3
+    Description: 'Enter the maximum number of worker nodes in nodegroup'
+  DesiredInstances:
+    Type: Number
+    Default: 1
+    Description: 'Enter the desired starting number of worker nodes in nodegroup'
+  EksNodeGroupName:
+    Type: String
+    Description: 'Enter the EKS nodegroup name'
+  EksName:
+    Type: String
+    Description: 'Enter the EKS name'
+  EksVersion:
+    Type: String
+    Default: 1.23
+    Description: 'Enter the EKS cluster version'
+
+Resources:
+## Creates EKS worker nodegroup 1
+## note:                      creates a nodegroup with nodes in a private subnet
+  EksNodegroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Ref EksName
+      DiskSize: !Ref VolumeSize
+      InstanceTypes:
+        - !Ref InstanceType
+      NodegroupName: !Sub '${EksName}-${EksNodeGroupName}'
+      NodeRole:
+        'Fn::Join':
+          - ''
+          - - '{{resolve:ssm:'
+            - !Ref EksName
+            - "-"
+            - "EksNodegroupRole:1}}"
+      Version: !Ref EksVersion
+      Subnets:
+          - 'Fn::Join':
+              - ''
+              - - '{{resolve:ssm:'
+                - !Ref EksName
+                - "-"
+                - "PrivateSubnetA:1}}"
+          - 'Fn::Join':
+              - ''
+              - - '{{resolve:ssm:'
+                - !Ref EksName
+                - "-"
+                - "PrivateSubnetB:1}}"
+      ScalingConfig:
+        DesiredSize: !Ref DesiredInstances
+        MinSize: !Ref MinInstances
+        MaxSize: !Ref MaxInstances
+    #  Tags: {'k8s.io/cluster-autoscaler/enabled':'true'}
