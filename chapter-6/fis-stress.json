@@ -13,7 +13,7 @@
     "actions": {
         "CPUStress": {
             "actionId": "aws:ssm:send-command",
-            "description": "run cpu stress on EC2 using ssm",
+            "description": "run cpu stress test on EC2 using ssm",
             "parameters": {
                 "duration": "PT5M",
                 "documentArn": "arn:aws:ssm:us-east-1::document/AWSFIS-Run-CPU-Stress",
