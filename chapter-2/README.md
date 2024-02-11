@@ -113,12 +113,12 @@ Update the value you want to use within `scripts/eks-provision.sh`, this include
 1. AWS Profile
 2. AWS region you want to deploy to
 3. Update the AWS region (for example `us-east-1`) within lines starting with `PRODUCTID` and `PROVISIONARTIFACTID` 
-4. Update the bucket path for the variable named `S3BucketPath`
+4. Update the bucket path for the variable named `S3BucketPath` in `parameter/eks-provisioner.json`
 
 > **Debugging note 1**: Make sure your product name (in line 5 and 6) within `eks-provision.sh` file is same as the product which contains description value of `eks-provisioner`.
 
-> **Debugging note 2**: If you have changed your product names while launching the stacks above, make sure the product names match to the parameters passed within `eks-provision.sh` file.
+> **Debugging note 2**: If you have changed your product names while launching the stacks above, make sure the product names match to the parameters passed within `parameter/eks-provisioner.json` file.
 
-> **Debugging note 3**: Make sure the product versions match with the variables in the `eks-provision.sh` file. Entirely depends on how many updates you have done to product.
+> **Debugging note 3**: Make sure the product versions match with the variables in the `parameter/eks-provisioner.json` file. Entirely depends on how many updates you have done to product.
 
 After you have updated all of the above, run the script in your terminal.
